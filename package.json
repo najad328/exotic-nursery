@@ -1,0 +1,24 @@
+{
+  "name": "exotic-nursery",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Exotic Plants Nursery — Mobile app + Admin dashboard monorepo",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "turbo": "^2.8.20",
+    "typescript": "^6.0.2"
+  }
+}

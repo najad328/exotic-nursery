@@ -1,0 +1,30 @@
+{
+  "name": "@exotic-nursery/admin",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests yet\" && exit 0",
+    "clean": "rm -rf .next .turbo node_modules"
+  },
+  "dependencies": {
+    "next": "^15.3.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.3",
+    "tailwindcss": "^4.1.10",
+    "@tailwindcss/postcss": "^4.1.10",
+    "postcss": "^8.5.6",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "^15.3.4",
+    "@types/node": "^22.15.0"
+  }
+}
