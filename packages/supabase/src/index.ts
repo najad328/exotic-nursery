@@ -1,13 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types/database";
 
-// Database types will be generated from Supabase CLI in Phase 1
-// import type { Database } from "./types/database";
+export type { Database };
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
+export type InsertTables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"];
+export type UpdateTables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"];
 
 /**
- * Creates a Supabase client for browser/mobile usage (anon key).
- * Uses different env var prefixes for Next.js vs Expo:
- * - Next.js: NEXT_PUBLIC_SUPABASE_URL
- * - Expo: EXPO_PUBLIC_SUPABASE_URL
+ * Creates a typed Supabase client for browser/mobile usage (anon key).
+ * Detects env var prefix automatically (Next.js vs Expo).
  */
 export function createSupabaseClient() {
   const supabaseUrl =
@@ -24,7 +28,7 @@ export function createSupabaseClient() {
     );
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createClient<Database>(supabaseUrl, supabaseAnonKey);
 }
 
 export { createClient } from "@supabase/supabase-js";

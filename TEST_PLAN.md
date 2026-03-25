@@ -26,7 +26,53 @@
 ---
 
 ## Phase 1: Auth + Plant Catalog
-_To be added when Phase 1 begins_
+
+### Auth — Happy Path
+- [ ] User registers with email + password → profile auto-created in `profiles` table
+- [ ] User logs in with valid credentials → redirected to home tab
+- [ ] User logs out → session cleared, redirected to login screen
+- [ ] Admin logs into admin dashboard → sees dashboard with plant/category counts
+- [ ] Non-admin user attempts admin login → gets "Access denied" error
+
+### Auth — Edge Cases
+- [ ] Register with already-used email → shows error, doesn't crash
+- [ ] Login with wrong password → shows error message
+- [ ] Very long full name (200+ chars) → handled gracefully
+- [ ] Concurrent login from mobile + admin → both sessions work independently
+- [ ] Session expiry → auto-redirects to login
+
+### Auth — Failure States
+- [ ] Supabase unreachable → error message, not a white screen
+- [ ] Missing env vars → clear error at startup
+- [ ] Malformed email input → client-side validation blocks submit
+
+### Plant Catalog — Happy Path
+- [ ] Home screen loads categories and featured plants from Supabase
+- [ ] Tapping a category filters the search results
+- [ ] Search by plant name returns matching results (fuzzy via pg_trgm)
+- [ ] Plant detail screen shows all fields: name, price, description, care info, tips
+- [ ] Prices display correctly in INR format (paise → ₹X.XX)
+- [ ] Discount percentage calculates correctly from compare_at_price
+
+### Plant Catalog — Edge Cases
+- [ ] Empty search query → shows all plants
+- [ ] Search with no results → shows "No plants found" empty state
+- [ ] Plant with no image → shows placeholder emoji
+- [ ] Plant with stock_quantity = 0 → shows "Out of stock", Add to Cart disabled
+- [ ] Very long plant name → truncated with ellipsis, doesn't break layout
+- [ ] Category with 0 plants → shows empty state in search
+
+### Plant Catalog — Failure States
+- [ ] Network timeout while loading catalog → error state, not infinite spinner
+- [ ] Navigating to non-existent plant slug → shows "Plant not found"
+- [ ] RLS blocks unauthorized access → anon users cannot see inactive plants
+
+### RLS Security Tests (Adversarial)
+- [ ] Unauthenticated request to `profiles` → returns empty (RLS blocks)
+- [ ] Customer A cannot read Customer B's profile
+- [ ] Non-admin cannot query `is_active = false` plants
+- [ ] Non-admin cannot INSERT/UPDATE/DELETE on `plants` table
+- [ ] Non-admin cannot INSERT/UPDATE/DELETE on `categories` table
 
 ## Phase 2: Admin Plant Management
 _To be added when Phase 2 begins_
