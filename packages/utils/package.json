@@ -12,7 +12,8 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@exotic-nursery/types": "workspace:*"
+    "@exotic-nursery/types": "workspace:*",
+    "zod": "^3.25.3"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

@@ -113,3 +113,53 @@ apps/admin/src/
     ├── login/page.tsx         # Admin login (client component)
     └── page.tsx               # Dashboard with stats (server component)
 ```
+
+---
+
+## 2026-03-26 — Phase 2: Admin Plant Management
+
+### Database / Storage Changes
+| Resource | Type | Details |
+|---|---|---|
+| `plant-images` | Storage bucket | Public read, admin-only write. 5MB max, JPEG/PNG/WebP/GIF. RLS policies for SELECT/INSERT/UPDATE/DELETE. |
+
+### Architecture Decisions
+- **Admin route group `(dashboard)`**: All authenticated admin pages now live under `src/app/(dashboard)/` with a shared layout that renders the sidebar. Login page stays outside this group (no sidebar). This avoids duplicating auth checks per page.
+- **Sidebar navigation**: Client component (`AdminSidebar.tsx`) using `usePathname()` for active state highlighting. Decoupled from server-side auth check.
+- **Zod validation for plant data**: All plant creation/editing goes through `createPlantSchema` (strict validation). Bulk uploads use `bulkPlantRowSchema` with lenient transforms (strings → numbers, "yes" → boolean).
+- **CSV parsing with PapaParse**: Streaming parse in the browser. Batch insert in chunks of 50 rows to avoid timeout on large uploads.
+- **Slug auto-generation**: `generateSlug()` utility converts plant names to URL-friendly slugs. Admin can override manually.
+- **Image upload to Supabase Storage**: Files uploaded to `plant-images/plants/` with random filenames. Public URL generated immediately for preview.
+
+### Dependencies Added (Phase 2)
+| Package | Version | Purpose | Workspace |
+|---|---|---|---|
+| zod | 3.25.x | Schema validation | packages/utils, admin |
+| papaparse | 5.5.x | CSV parsing (bulk upload) | admin |
+| @types/papaparse | 5.3.x | TypeScript types | admin (dev) |
+
+### File Structure Added
+```
+packages/utils/src/
+└── validation.ts         # Zod schemas: createPlant, updatePlant, bulkPlantRow, createCategory, generateSlug
+
+apps/admin/src/
+├── components/
+│   ├── AdminSidebar.tsx  # Sidebar nav with active state
+│   ├── AdminLayout.tsx   # Sidebar + main content wrapper
+│   └── PlantForm.tsx     # Create/edit form with image upload + Zod validation
+└── app/(dashboard)/
+    ├── layout.tsx         # Auth guard + AdminLayout wrapper
+    ├── page.tsx           # Dashboard overview (stats + quick actions)
+    └── plants/
+        ├── page.tsx           # Plant list (server) + client-side filters
+        ├── PlantListClient.tsx # Searchable/filterable plant table
+        ├── new/page.tsx       # Create new plant
+        ├── [id]/page.tsx      # Edit existing plant
+        └── upload/
+            ├── page.tsx           # Bulk upload page (server)
+            └── BulkUploadClient.tsx # CSV/JSON upload with preview + validation
+
+supabase/migrations/
+└── 20260326000001_create_storage_bucket.sql  # plant-images bucket + RLS
+```
