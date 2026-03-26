@@ -200,6 +200,161 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          id: string
+          user_id: string
+          plant_id: string
+          quantity: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plant_id: string
+          quantity?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plant_id?: string
+          quantity?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      orders: {
+        Row: {
+          id: string
+          user_id: string
+          status: string
+          payment_method: string
+          payment_status: string
+          subtotal_paise: number
+          delivery_fee_paise: number
+          total_paise: number
+          delivery_name: string
+          delivery_phone: string
+          delivery_address: string
+          delivery_city: string
+          delivery_pincode: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: string
+          payment_method?: string
+          payment_status?: string
+          subtotal_paise: number
+          delivery_fee_paise?: number
+          total_paise: number
+          delivery_name: string
+          delivery_phone: string
+          delivery_address: string
+          delivery_city: string
+          delivery_pincode: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: string
+          payment_method?: string
+          payment_status?: string
+          subtotal_paise?: number
+          delivery_fee_paise?: number
+          total_paise?: number
+          delivery_name?: string
+          delivery_phone?: string
+          delivery_address?: string
+          delivery_city?: string
+          delivery_pincode?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          plant_id: string
+          plant_name: string
+          plant_image: string | null
+          quantity: number
+          price_paise: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          plant_id: string
+          plant_name: string
+          plant_image?: string | null
+          quantity: number
+          price_paise: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          plant_id?: string
+          plant_name?: string
+          plant_image?: string | null
+          quantity?: number
+          price_paise?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -207,6 +362,19 @@ export type Database = {
     Functions: {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      place_order: {
+        Args: {
+          p_payment_method: string
+          p_delivery_name: string
+          p_delivery_phone: string
+          p_delivery_address: string
+          p_delivery_city: string
+          p_delivery_pincode: string
+          p_notes?: string | null
+          p_delivery_fee_paise?: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

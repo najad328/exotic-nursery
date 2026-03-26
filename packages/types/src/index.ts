@@ -94,6 +94,96 @@ export interface PlantFilters {
   limit?: number;
 }
 
-// Phase 3: Order & Cart types will go here
+// ---- Cart ----
+
+export interface CartItem {
+  id: string;
+  user_id: string;
+  plant_id: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CartItemWithPlant extends CartItem {
+  plant: Pick<Plant, "id" | "name" | "slug" | "price_paise" | "stock_quantity" | "image_url" | "is_active">;
+}
+
+// ---- Orders ----
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "shipped"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export type PaymentMethod = "cod" | "upi";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
+export interface Order {
+  id: string;
+  user_id: string;
+  status: OrderStatus;
+  payment_method: PaymentMethod;
+  payment_status: PaymentStatus;
+  subtotal_paise: number;
+  delivery_fee_paise: number;
+  total_paise: number;
+  delivery_name: string;
+  delivery_phone: string;
+  delivery_address: string;
+  delivery_city: string;
+  delivery_pincode: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  plant_id: string;
+  plant_name: string;
+  plant_image: string | null;
+  quantity: number;
+  price_paise: number;
+  created_at: string;
+}
+
+export interface OrderWithItems extends Order {
+  order_items: OrderItem[];
+}
+
+export interface DeliveryDetails {
+  delivery_name: string;
+  delivery_phone: string;
+  delivery_address: string;
+  delivery_city: string;
+  delivery_pincode: string;
+  notes?: string;
+}
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: "Order Placed",
+  confirmed: "Confirmed",
+  processing: "Being Prepared",
+  shipped: "Shipped",
+  out_for_delivery: "Out for Delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+export const ORDER_STATUS_FLOW: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+];
+
 // Phase 5: WhatsApp template types will go here
 // Phase 6: Chat types will go here

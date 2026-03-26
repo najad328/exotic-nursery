@@ -1,10 +1,44 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { View, Text, StyleSheet } from "react-native";
+import { useCartStore } from "../../stores/cartStore";
 
 type TabIconProps = {
   color: string;
   size: number;
 };
+
+function CartIcon({ color, size }: TabIconProps) {
+  const totalItems = useCartStore((s) => s.totalItems());
+  return (
+    <View>
+      <Ionicons name="cart" size={size} color={color} />
+      {totalItems > 0 && (
+        <View style={badgeStyles.badge}>
+          <Text style={badgeStyles.badgeText}>
+            {totalItems > 9 ? "9+" : totalItems}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const badgeStyles = StyleSheet.create({
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    backgroundColor: "#C62828",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: { color: "#fff", fontSize: 10, fontWeight: "bold" },
+});
 
 export default function TabLayout() {
   return (
@@ -44,6 +78,15 @@ export default function TabLayout() {
           title: "Search",
           tabBarIcon: ({ color, size }: TabIconProps) => (
             <Ionicons name="search" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: "Cart",
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <CartIcon color={color} size={size} />
           ),
         }}
       />
