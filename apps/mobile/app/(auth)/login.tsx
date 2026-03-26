@@ -3,24 +3,36 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
   Platform,
+  KeyboardAvoidingView,
   ScrollView,
 } from "react-native";
 import { Link, router } from "expo-router";
 import { signIn } from "../../services/auth";
 
+function showAlert(title: string, message: string) {
+  if (Platform.OS === "web") {
+    window.alert(`${title}: ${message}`);
+  } else {
+    // Dynamic import to avoid web issues
+    const { Alert } = require("react-native");
+    Alert.alert(title, message);
+  }
+}
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
+    setError(null);
+
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
+      setError("Please fill in all fields");
       return;
     }
 
@@ -31,7 +43,7 @@ export default function LoginScreen() {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Login failed. Please try again.";
-      Alert.alert("Login Failed", message);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -55,6 +67,12 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
+          {error && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
@@ -76,22 +94,26 @@ export default function LoginScreen() {
             autoComplete="password"
           />
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              loading && styles.buttonDisabled,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={handleLogin}
             disabled={loading}
           >
             <Text style={styles.buttonText}>
               {loading ? "Signing in..." : "Sign In"}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
+              <Pressable>
                 <Text style={styles.link}>Sign Up</Text>
-              </TouchableOpacity>
+              </Pressable>
             </Link>
           </View>
         </View>
@@ -153,12 +175,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: "#FAFAFA",
   },
+  errorBox: {
+    backgroundColor: "#FFEBEE",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#EF9A9A",
+  },
+  errorText: {
+    color: "#C62828",
+    fontSize: 14,
+    textAlign: "center",
+  },
   button: {
     backgroundColor: "#1B5E20",
     borderRadius: 10,
     padding: 16,
     alignItems: "center",
     marginTop: 24,
+    cursor: "pointer" as unknown as undefined,
   },
   buttonDisabled: {
     opacity: 0.6,
