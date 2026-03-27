@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "../services/supabase";
 import { useAuthStore } from "../stores/authStore";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ export default function RootLayout() {
   }, [setSession, fetchProfile]);
 
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <StatusBar style="light" />
       <Stack
@@ -63,5 +65,6 @@ export default function RootLayout() {
         />
       </Stack>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
