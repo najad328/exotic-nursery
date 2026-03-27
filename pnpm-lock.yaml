@@ -90,6 +90,9 @@ importers:
       '@exotic-nursery/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@exotic-nursery/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@expo/vector-icons':
         specifier: ^15.1.1
         version: 15.1.1(expo-font@55.0.4)(react-native@0.83.2(@babel/core@7.29.0)(@react-native/metro-config@0.84.1(@babel/core@7.29.0))(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)

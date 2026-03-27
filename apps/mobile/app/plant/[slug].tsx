@@ -1,18 +1,20 @@
+import { useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   Image,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { getPlantBySlug } from "../../services/plants";
 import { formatPriceINR } from "@exotic-nursery/types";
+import { useCartStore } from "../../stores/cartStore";
 
 export default function PlantDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -155,23 +157,77 @@ export default function PlantDetailScreen() {
       </ScrollView>
 
       {/* Bottom CTA */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={[
-            styles.addToCartButton,
-            plant.stock_quantity === 0 && styles.addToCartDisabled,
-          ]}
-          disabled={plant.stock_quantity === 0}
-          onPress={() =>
-            Alert.alert("Coming Soon", "Cart functionality is in Phase 3")
-          }
-        >
-          <Ionicons name="cart" size={22} color="#fff" />
-          <Text style={styles.addToCartText}>
-            {plant.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
-          </Text>
-        </TouchableOpacity>
+      <AddToCartBar
+        plantId={plant.id}
+        stockQuantity={plant.stock_quantity}
+        pricePaise={plant.price_paise}
+      />
+    </View>
+  );
+}
+
+function AddToCartBar({
+  plantId,
+  stockQuantity,
+  pricePaise,
+}: {
+  plantId: string;
+  stockQuantity: number;
+  pricePaise: number;
+}) {
+  const addItem = useCartStore((s) => s.addItem);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  async function handleAdd() {
+    setAdding(true);
+    try {
+      await addItem(plantId);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch {
+      if (Platform.OS === "web") {
+        window.alert("Failed to add to cart. Please try again.");
+      }
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  const outOfStock = stockQuantity === 0;
+
+  return (
+    <View style={styles.bottomBar}>
+      <View style={styles.bottomPrice}>
+        <Text style={styles.bottomPriceLabel}>Price</Text>
+        <Text style={styles.bottomPriceValue}>
+          {formatPriceINR(pricePaise)}
+        </Text>
       </View>
+      <Pressable
+        style={[
+          styles.addToCartButton,
+          outOfStock && styles.addToCartDisabled,
+          added && styles.addToCartAdded,
+        ]}
+        disabled={outOfStock || adding}
+        onPress={handleAdd}
+      >
+        {adding ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <>
+            <Ionicons
+              name={added ? "checkmark-circle" : "cart"}
+              size={22}
+              color="#fff"
+            />
+            <Text style={styles.addToCartText}>
+              {outOfStock ? "Out of Stock" : added ? "Added!" : "Add to Cart"}
+            </Text>
+          </>
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -340,15 +396,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: Platform.OS === "ios" ? 34 : 16,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#EEE",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
+  bottomPrice: { marginRight: 4 },
+  bottomPriceLabel: { fontSize: 12, color: "#888" },
+  bottomPriceValue: { fontSize: 20, fontWeight: "bold", color: "#1B5E20" },
   addToCartButton: {
+    flex: 1,
     backgroundColor: "#1B5E20",
     borderRadius: 12,
-    paddingVertical: 16,
+    paddingVertical: 14,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -357,9 +425,12 @@ const styles = StyleSheet.create({
   addToCartDisabled: {
     backgroundColor: "#999",
   },
+  addToCartAdded: {
+    backgroundColor: "#2E7D32",
+  },
   addToCartText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

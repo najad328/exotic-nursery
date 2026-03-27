@@ -18,6 +18,7 @@
   "dependencies": {
     "@exotic-nursery/supabase": "workspace:*",
     "@exotic-nursery/types": "workspace:*",
+    "@exotic-nursery/utils": "workspace:*",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "^3.0.1",
     "@supabase/supabase-js": "^2.100.0",
