@@ -82,7 +82,6 @@ export default async function DashboardPage() {
           description="View sales trends and top-selling plants"
           href="/analytics"
           icon="📊"
-          disabled
         />
       </div>
     </div>
