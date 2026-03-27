@@ -1,5 +1,6 @@
 // Shared utilities for the Exotic Nursery app
 export * from "./validation";
+export * from "./whatsapp";
 
 /**
  * Format price from paise (integer) to display string.

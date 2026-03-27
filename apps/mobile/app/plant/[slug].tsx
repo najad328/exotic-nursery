@@ -15,6 +15,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { getPlantBySlug } from "../../services/plants";
 import { formatPriceINR } from "@exotic-nursery/types";
 import { useCartStore } from "../../stores/cartStore";
+import { WhatsAppButton } from "../../components/WhatsAppButton";
+import { buildPlantInquiryWhatsAppUrl } from "@exotic-nursery/utils";
 
 export default function PlantDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -151,6 +153,18 @@ export default function PlantDetailScreen() {
               </View>
             </>
           )}
+
+          {/* WhatsApp Inquiry */}
+          <View style={{ marginTop: 20 }}>
+            <WhatsAppButton
+              url={buildPlantInquiryWhatsAppUrl(
+                process.env.EXPO_PUBLIC_WHATSAPP_PHONE ?? "9999999999",
+                plant.name
+              )}
+              label="Ask about this plant"
+              compact
+            />
+          </View>
 
           <View style={{ height: 100 }} />
         </View>
