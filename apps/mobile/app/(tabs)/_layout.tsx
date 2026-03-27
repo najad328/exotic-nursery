@@ -100,6 +100,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="chatbot"
+        options={{
+          title: "Ask AI",
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <Ionicons name="chatbubble-ellipses" size={size} color={color} />
+          ),
+          headerTitle: "Plant Care Assistant",
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
