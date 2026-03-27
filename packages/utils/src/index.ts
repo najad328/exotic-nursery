@@ -1,5 +1,5 @@
 // Shared utilities for the Exotic Nursery app
-// Validation (Zod), formatting, constants will be added per phase
+export * from "./validation";
 
 /**
  * Format price from paise (integer) to display string.
