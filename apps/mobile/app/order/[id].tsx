@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { getOrderById } from "../../services/orders";
+import { supabase } from "../../services/supabase";
 import { formatPrice } from "@exotic-nursery/utils";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_FLOW } from "@exotic-nursery/types";
 import type { OrderWithItems, OrderStatus } from "@exotic-nursery/types";
@@ -22,6 +23,35 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     if (!id) return;
     loadOrder();
+
+    // Subscribe to real-time order status changes
+    const channel = supabase
+      .channel(`order-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { status: string; updated_at: string };
+          setOrder((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              status: updated.status as OrderStatus,
+              updated_at: updated.updated_at,
+            };
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   async function loadOrder() {

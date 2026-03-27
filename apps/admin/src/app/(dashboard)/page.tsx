@@ -16,13 +16,22 @@ export default async function DashboardPage() {
     .select("*", { count: "exact", head: true })
     .eq("is_active", true);
 
+  const { count: orderCount } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true });
+
+  const { count: pendingOrderCount } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+    .in("status", ["pending", "confirmed", "processing"]);
+
   return (
     <div className="p-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         Dashboard Overview
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
           title="Active Plants"
           value={plantCount ?? 0}
@@ -36,10 +45,16 @@ export default async function DashboardPage() {
           description="Active categories"
         />
         <StatCard
-          title="Orders"
-          value={0}
+          title="Total Orders"
+          value={orderCount ?? 0}
           icon="📦"
-          description="Coming in Phase 3"
+          description="All time"
+        />
+        <StatCard
+          title="Active Orders"
+          value={pendingOrderCount ?? 0}
+          icon="⏳"
+          description="Pending / Processing"
         />
       </div>
 
@@ -61,7 +76,6 @@ export default async function DashboardPage() {
           description="Track and manage customer orders"
           href="/orders"
           icon="📋"
-          disabled
         />
         <QuickAction
           title="Analytics"
