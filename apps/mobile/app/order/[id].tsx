@@ -10,9 +10,10 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { getOrderById } from "../../services/orders";
 import { supabase } from "../../services/supabase";
-import { formatPrice } from "@exotic-nursery/utils";
+import { formatPrice, buildOrderStatusWhatsAppUrl } from "@exotic-nursery/utils";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_FLOW } from "@exotic-nursery/types";
 import type { OrderWithItems, OrderStatus } from "@exotic-nursery/types";
+import { WhatsAppButton } from "../../components/WhatsAppButton";
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -220,8 +221,20 @@ export default function OrderDetailScreen() {
         )}
       </View>
 
+      {/* WhatsApp — contact nursery about this order */}
+      <WhatsAppButton
+        url={buildOrderStatusWhatsAppUrl(
+          process.env.EXPO_PUBLIC_WHATSAPP_PHONE ?? "9999999999",
+          order.delivery_name,
+          order.id,
+          order.status,
+          formatPrice(order.total_paise)
+        )}
+        label="Contact Nursery on WhatsApp"
+      />
+
       <Pressable
-        style={styles.backButton}
+        style={[styles.backButton, { marginTop: 12 }]}
         onPress={() => router.push("/(tabs)/orders")}
       >
         <Text style={styles.backButtonText}>View All Orders</Text>
