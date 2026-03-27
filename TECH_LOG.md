@@ -1,16 +1,16 @@
 # Tech Log — Exotic Plants Nursery App
 
-> Tracks architectural decisions, new dependencies, schema changes, and rationale.
+> Tracks architectural decisions, new dependencies, schema changes, and rationale across all 8 phases.
 
 ---
 
 ## 2026-03-24 — Phase 0: Project Scaffolding
 
 ### Architecture Decisions
-- **Monorepo with Turborepo + pnpm workspaces**: Chosen for shared code between mobile (Expo) and admin (Next.js). Turborepo provides build caching and task orchestration.
-- **Expo SDK 55 + React Native 0.83**: Latest stable. Using `blank-typescript` template — will migrate to Expo Router (file-based routing) in Phase 1.
-- **Next.js 15 App Router**: Latest stable with React 19 support. Tailwind CSS v4 for styling.
-- **Supabase as backend**: Postgres DB, Auth, Storage, Edge Functions, Realtime — all on free tier. Eliminates need for custom backend.
+- **Monorepo with Turborepo + pnpm workspaces**: Shared code between mobile (Expo) and admin (Next.js). Turborepo provides build caching and task orchestration.
+- **Expo SDK 55 + React Native 0.83**: Latest stable with React 19 support.
+- **Next.js 15 App Router**: Server components + Tailwind CSS v4.
+- **Supabase as backend**: Postgres, Auth, Storage, Realtime — all free tier. No custom backend needed.
 - **TypeScript strict mode**: `noUncheckedIndexedAccess` enabled. Zero `any` policy.
 - **Prices in paise (integer)**: Avoids floating-point math errors. ₹150.00 stored as `15000`.
 
@@ -18,148 +18,181 @@
 | Package | Version | Purpose | Workspace |
 |---|---|---|---|
 | turbo | 2.8.x | Monorepo build orchestration | root |
-| typescript | 6.0.x | Language | root |
+| typescript | 5.9.x | Language | root |
 | expo | 55.0.x | Mobile framework | mobile |
 | next | 15.3.x | Admin framework | admin |
 | react | 19.2.x | UI library | admin, mobile |
 | tailwindcss | 4.1.x | Admin styling | admin |
-| @supabase/supabase-js | 2.49.x | Supabase client | packages/supabase |
-
-### Folder Structure
-```
-exotic-nursery/
-├── apps/mobile/          # Expo (React Native)
-├── apps/admin/           # Next.js App Router
-├── packages/types/       # Shared TS interfaces
-├── packages/utils/       # Shared utilities
-├── packages/supabase/    # Supabase client factory
-└── supabase/             # CLI config, migrations, edge functions
-```
-
-### CI/CD
-- GitHub Actions: lint → typecheck → test → build on every PR and push to main
-- Turborepo caching enabled for faster CI runs
+| @supabase/supabase-js | 2.100.x | Supabase client | packages/supabase |
 
 ---
 
 ## 2026-03-25 — Phase 1: Auth + Plant Catalog
 
-### Database Schema Changes
-| Table | Columns | Key Design |
-|---|---|---|
-| `profiles` | id (FK→auth.users), full_name, phone, avatar_url, role, address, city, pincode | Auto-created via trigger on auth.users INSERT. RLS: users see own, admins see all |
-| `categories` | id, name, slug, description, image_url, sort_order, is_active | RLS: anyone reads active, admins manage all |
-| `plants` | id, category_id (FK), name, slug, description, price_paise, stock_quantity, care_level, sunlight, watering, + 8 more | RLS: anyone reads active, admins manage all. pg_trgm index for fuzzy search |
-
-- **pg_trgm extension** enabled for fuzzy plant name search (`plants_name_trgm_idx`)
-- **Prices stored in paise** (integer) — ₹349.00 = 34900 paise
-- **`set_updated_at()` trigger** shared across all tables
-- **6 categories, 20 exotic plants** seeded
+### Database Schema
+| Table | Key Design |
+|---|---|
+| `profiles` | Auto-created via trigger on auth.users INSERT. RLS: users see own, admins see all. |
+| `categories` | 6 seeded categories. RLS: anyone reads active, admins manage all. |
+| `plants` | 20 seeded plants. pg_trgm index for fuzzy search. Prices in paise. |
 
 ### Architecture Decisions
-- **Expo Router (file-based routing)**: Migrated from basic App.tsx to `app/` directory with `(auth)` and `(tabs)` groups. Entry point changed to `expo-router/entry`.
-- **Zustand for auth state**: Lightweight store (`authStore.ts`) holds session, user, and profile. Synced with Supabase auth listener in root layout.
-- **TanStack Query for server state**: All Supabase data fetching uses `useQuery` with 5-min stale time. Separates server cache from client state.
-- **Supabase SSR in admin**: Using `@supabase/ssr` with cookie-based auth for Next.js server components. Middleware checks auth + admin role on every request.
-- **Admin route protection**: Dual-layer — middleware redirects unauthenticated/non-admin users, and login page does client-side role check before redirecting.
+- **Expo Router (file-based routing)**: `(auth)` and `(tabs)` route groups
+- **Zustand for auth state**: Lightweight store synced with Supabase auth listener
+- **TanStack Query for server state**: 5-min stale time, separates server cache from client state
+- **Supabase SSR in admin**: `@supabase/ssr` with cookie-based auth, middleware checks admin role
 
-### Dependencies Added (Phase 1)
-| Package | Version | Purpose | Workspace |
-|---|---|---|---|
-| expo-router | 55.0.x | File-based routing | mobile |
-| expo-linking | 55.0.x | Deep linking support | mobile |
-| expo-constants | 55.0.x | App constants | mobile |
-| expo-splash-screen | 55.0.x | Splash screen | mobile |
-| react-native-screens | 4.24.x | Native screen containers | mobile |
-| react-native-safe-area-context | 5.7.x | Safe area insets | mobile |
-| react-native-gesture-handler | 2.30.x | Touch gestures | mobile |
-| react-native-reanimated | 4.2.x | Animations | mobile |
-| @expo/vector-icons | 15.1.x | Icon library | mobile |
-| @react-native-async-storage/async-storage | 3.0.x | Persistent auth storage | mobile |
-| react-native-url-polyfill | 3.0.x | URL API polyfill | mobile |
-| zustand | 5.0.x | Client state management | mobile |
-| @tanstack/react-query | 5.95.x | Server state / data fetching | mobile |
-| @supabase/ssr | 0.9.x | Cookie-based Supabase auth | admin |
-
-### File Structure Added
-```
-apps/mobile/
-├── app/
-│   ├── _layout.tsx          # Root: providers, auth listener
-│   ├── index.tsx             # Redirect: session → tabs, else → login
-│   ├── (auth)/_layout.tsx    # Auth stack
-│   ├── (auth)/login.tsx      # Login screen
-│   ├── (auth)/register.tsx   # Register screen
-│   ├── (tabs)/_layout.tsx    # Tab navigator (Home, Search, Orders, Profile)
-│   ├── (tabs)/index.tsx      # Home: categories + featured plants
-│   ├── (tabs)/search.tsx     # Catalog with search + category filters
-│   ├── (tabs)/orders.tsx     # Placeholder for Phase 3
-│   ├── (tabs)/profile.tsx    # Profile + sign out
-│   └── plant/[slug].tsx      # Plant detail screen
-├── services/
-│   ├── supabase.ts           # Typed Supabase client with AsyncStorage
-│   ├── auth.ts               # signUp, signIn, signOut, getProfile
-│   └── plants.ts             # getPlants, getPlantBySlug, getFeaturedPlants, getCategories
-└── stores/
-    └── authStore.ts          # Zustand: session, user, profile
-
-apps/admin/src/
-├── middleware.ts              # Auth + admin role guard
-├── lib/
-│   ├── supabase-server.ts    # Server component client
-│   ├── supabase-browser.ts   # Client component client
-│   └── supabase-middleware.ts # Middleware client with cookie handling
-└── app/
-    ├── login/page.tsx         # Admin login (client component)
-    └── page.tsx               # Dashboard with stats (server component)
-```
+### Dependencies Added
+| Package | Purpose | Workspace |
+|---|---|---|
+| expo-router | File-based routing | mobile |
+| zustand | Client state management | mobile |
+| @tanstack/react-query | Server state / data fetching | mobile |
+| @supabase/ssr | Cookie-based Supabase auth | admin |
+| react-native-screens, gesture-handler, reanimated, safe-area-context | Navigation stack | mobile |
+| @react-native-async-storage/async-storage | Session persistence | mobile |
 
 ---
 
 ## 2026-03-26 — Phase 2: Admin Plant Management
 
 ### Database / Storage Changes
-| Resource | Type | Details |
-|---|---|---|
-| `plant-images` | Storage bucket | Public read, admin-only write. 5MB max, JPEG/PNG/WebP/GIF. RLS policies for SELECT/INSERT/UPDATE/DELETE. |
+| Resource | Details |
+|---|---|
+| `plant-images` bucket | Public read, admin-only write. 5MB max, JPEG/PNG/WebP/GIF. |
 
 ### Architecture Decisions
-- **Admin route group `(dashboard)`**: All authenticated admin pages now live under `src/app/(dashboard)/` with a shared layout that renders the sidebar. Login page stays outside this group (no sidebar). This avoids duplicating auth checks per page.
-- **Sidebar navigation**: Client component (`AdminSidebar.tsx`) using `usePathname()` for active state highlighting. Decoupled from server-side auth check.
-- **Zod validation for plant data**: All plant creation/editing goes through `createPlantSchema` (strict validation). Bulk uploads use `bulkPlantRowSchema` with lenient transforms (strings → numbers, "yes" → boolean).
-- **CSV parsing with PapaParse**: Streaming parse in the browser. Batch insert in chunks of 50 rows to avoid timeout on large uploads.
-- **Slug auto-generation**: `generateSlug()` utility converts plant names to URL-friendly slugs. Admin can override manually.
-- **Image upload to Supabase Storage**: Files uploaded to `plant-images/plants/` with random filenames. Public URL generated immediately for preview.
+- **`(dashboard)` route group**: All admin pages share auth guard layout + sidebar
+- **Zod validation**: `createPlantSchema` for forms, `bulkPlantRowSchema` with lenient transforms for CSV
+- **PapaParse for CSV**: Streaming parse in browser, batch insert in chunks of 50
+- **Image upload to Supabase Storage**: Random filenames, public URL generated for preview
 
-### Dependencies Added (Phase 2)
-| Package | Version | Purpose | Workspace |
-|---|---|---|---|
-| zod | 3.25.x | Schema validation | packages/utils, admin |
-| papaparse | 5.5.x | CSV parsing (bulk upload) | admin |
-| @types/papaparse | 5.3.x | TypeScript types | admin (dev) |
+### Dependencies Added
+| Package | Purpose | Workspace |
+|---|---|---|
+| zod | Schema validation | packages/utils, admin |
+| papaparse | CSV parsing | admin |
 
-### File Structure Added
-```
-packages/utils/src/
-└── validation.ts         # Zod schemas: createPlant, updatePlant, bulkPlantRow, createCategory, generateSlug
+---
 
-apps/admin/src/
-├── components/
-│   ├── AdminSidebar.tsx  # Sidebar nav with active state
-│   ├── AdminLayout.tsx   # Sidebar + main content wrapper
-│   └── PlantForm.tsx     # Create/edit form with image upload + Zod validation
-└── app/(dashboard)/
-    ├── layout.tsx         # Auth guard + AdminLayout wrapper
-    ├── page.tsx           # Dashboard overview (stats + quick actions)
-    └── plants/
-        ├── page.tsx           # Plant list (server) + client-side filters
-        ├── PlantListClient.tsx # Searchable/filterable plant table
-        ├── new/page.tsx       # Create new plant
-        ├── [id]/page.tsx      # Edit existing plant
-        └── upload/
-            ├── page.tsx           # Bulk upload page (server)
-            └── BulkUploadClient.tsx # CSV/JSON upload with preview + validation
+## 2026-03-26 — Phase 3: Cart + Ordering + COD
 
-supabase/migrations/
-└── 20260326000001_create_storage_bucket.sql  # plant-images bucket + RLS
-```
+### Database Schema
+| Table | Key Design |
+|---|---|
+| `cart_items` | UNIQUE(user_id, plant_id). RLS: users manage own cart. |
+| `orders` | Status flow: pending → confirmed → processing → shipped → out_for_delivery → delivered. Realtime enabled. |
+| `order_items` | Snapshot of plant name/price at order time (immutable). |
+| `place_order()` | Atomic Postgres function: validate stock → insert order + items → decrement stock → clear cart. Uses `SELECT ... FOR UPDATE`. |
+
+### Architecture Decisions
+- **Zustand cart store**: Synced with Supabase `cart_items`, exposes `totalItems()` and `subtotalPaise()`
+- **Atomic order placement**: Single Postgres function prevents overselling via row locks
+- **Cart badge on tab**: Shows item count, updates reactively
+- **Checkout form**: Pre-filled from user profile, validates phone (10 digits) and pincode (6 digits)
+
+---
+
+## 2026-03-26 — Phase 4: Order Tracking + Admin Orders
+
+### Architecture Decisions
+- **Admin order management**: Server-rendered list + client-side filters (status, search)
+- **Forward-only status transitions**: Admin can only advance status, never go backward (except cancel)
+- **Status timeline visualization**: 6-step progress bar on admin detail
+- **Supabase Realtime**: Mobile order detail subscribes to `postgres_changes` on `orders` table filtered by order ID. Status updates without refresh.
+- **Push notifications deferred**: Will add when device build is available
+
+---
+
+## 2026-03-26 — Phase 5: WhatsApp Integration
+
+### Database Schema
+| Table | Key Design |
+|---|---|
+| `whatsapp_templates` | 7 seeded templates across 3 categories (order_status, inquiry, promotion). Variables: `{{variable_name}}` syntax. |
+
+### Architecture Decisions
+- **Deep-link approach (`wa.me/...`)**: $0 cost, works on mobile + web. No WhatsApp Business API needed.
+- **Template interpolation**: `interpolateTemplate()` replaces `{{variables}}` with values
+- **Admin template management**: Browse, fill variables, live preview, copy-to-clipboard, send via WhatsApp
+- **Context-aware messages**: Order detail button adapts message to current status; plant detail button pre-fills plant name
+
+---
+
+## 2026-03-27 — Phase 6: AI Plant Chatbot
+
+### Database Schema
+| Table | Key Design |
+|---|---|
+| `chat_history` | User-scoped, indexed by (user_id, created_at DESC). RLS: users manage own. |
+
+### Architecture Decisions
+- **Pluggable LLM interface**: `LLMProvider` interface with `sendMessage()`. Swap providers by changing one import.
+- **Gemini Flash (free tier)**: 15 RPM, 1M tokens/day, 1500 req/day. Called directly from client — no Edge Function needed.
+- **System prompt**: Plant care expert persona. Redirects non-plant questions. Uses emojis.
+- **Context window**: Last 10 messages sent for conversational continuity
+- **6 suggested starter questions**: Quick interaction without typing
+- **No Edge Function**: Calling Gemini from client avoids Supabase function deployment complexity and stays $0
+
+### Dependencies Added
+| Package | Purpose | Workspace |
+|---|---|---|
+| (none — uses native fetch) | Gemini API calls | mobile |
+
+---
+
+## 2026-03-27 — Phase 7: Admin Analytics
+
+### Database Views
+| View | Purpose |
+|---|---|
+| `v_daily_orders` | Daily order count + revenue (last 30 days) |
+| `v_top_plants` | Top 10 plants by quantity sold |
+| `v_order_status_counts` | Order count per status |
+| `v_monthly_revenue` | Monthly revenue + avg order value |
+
+### Architecture Decisions
+- **Recharts for visualizations**: Bar chart (daily orders), line chart (revenue), horizontal bar (top plants), pie chart (status breakdown)
+- **Server-side aggregation**: Data aggregated in Next.js server component, passed to client chart components
+- **5 KPI cards**: Total revenue, total orders, avg order value, customers, active plants
+- **Graceful empty state**: Shows placeholder when no orders exist
+
+### Dependencies Added
+| Package | Purpose | Workspace |
+|---|---|---|
+| recharts | Chart library | admin |
+
+---
+
+## 2026-03-27 — Phase 8: Polish
+
+### Architecture Decisions
+- **Mobile ErrorBoundary**: Class component wrapping root layout. Catches React crashes, shows "Try Again" instead of white screen.
+- **Admin error.tsx**: Next.js error boundary for dashboard routes with retry button
+- **Admin not-found.tsx**: Custom 404 page
+- **Loading skeletons**: Tailwind `animate-pulse` for dashboard, plants list, orders list
+- **Env validation utility**: `validateEnv()` function for startup checks
+- **Updated .env.example**: Documents all required variables for both apps
+
+---
+
+## Summary: Full Dependency List
+
+| Package | Workspace | Purpose |
+|---|---|---|
+| turbo | root | Monorepo orchestration |
+| typescript | root | Language |
+| expo (SDK 55) | mobile | React Native framework |
+| expo-router | mobile | File-based routing |
+| zustand | mobile | Client state (auth, cart) |
+| @tanstack/react-query | mobile | Server state / caching |
+| @supabase/supabase-js | packages/supabase | Database client |
+| @supabase/ssr | admin | Cookie-based auth |
+| next (15.3) | admin | Admin framework |
+| tailwindcss (4.1) | admin | Styling |
+| zod | packages/utils | Schema validation |
+| papaparse | admin | CSV parsing |
+| recharts | admin | Chart visualizations |
+| react-native-screens | mobile | Navigation |
+| react-native-gesture-handler | mobile | Touch gestures |
+| react-native-reanimated | mobile | Animations |
