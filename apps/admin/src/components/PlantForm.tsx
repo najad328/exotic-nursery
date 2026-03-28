@@ -17,6 +17,7 @@ interface PlantData {
   description: string;
   category_id: string;
   price_paise: number;
+  compare_at_price_paise: number | null;
   stock_quantity: number;
   image_url: string;
   images: string[];
@@ -34,6 +35,7 @@ const EMPTY_PLANT: PlantData = {
   description: "",
   category_id: "",
   price_paise: 0,
+  compare_at_price_paise: null,
   stock_quantity: 0,
   image_url: "",
   images: [],
@@ -57,6 +59,9 @@ export function PlantForm({
   const [form, setForm] = useState<PlantData>(plant ?? EMPTY_PLANT);
   const [priceRupees, setPriceRupees] = useState(
     plant ? (plant.price_paise / 100).toString() : ""
+  );
+  const [comparePriceRupees, setComparePriceRupees] = useState(
+    plant?.compare_at_price_paise ? (plant.compare_at_price_paise / 100).toString() : ""
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -87,6 +92,18 @@ export function PlantForm({
     const num = parseFloat(value);
     if (!isNaN(num)) {
       updateField("price_paise", toPaise(num));
+    }
+  }
+
+  function handleComparePriceChange(value: string) {
+    setComparePriceRupees(value);
+    if (!value.trim()) {
+      updateField("compare_at_price_paise", null);
+      return;
+    }
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      updateField("compare_at_price_paise", toPaise(num));
     }
   }
 
@@ -209,6 +226,7 @@ export function PlantForm({
         description: result.data.description,
         category_id: result.data.category_id,
         price_paise: result.data.price_paise,
+        compare_at_price_paise: form.compare_at_price_paise || null,
         stock_quantity: result.data.stock_quantity,
         image_url: result.data.image_url || null,
         images: result.data.images,
@@ -343,6 +361,28 @@ export function PlantForm({
             {form.price_paise > 0 && (
               <p className="text-xs text-gray-400 mt-1">
                 Stored as: {formatPrice(form.price_paise)} ({form.price_paise} paise)
+              </p>
+            )}
+          </Field>
+
+          <Field label="Compare at Price (₹)" error={errors.compare_at_price_paise}>
+            <input
+              type="number"
+              value={comparePriceRupees}
+              onChange={(e) => handleComparePriceChange(e.target.value)}
+              placeholder="499 (leave blank for no discount)"
+              step="0.01"
+              min="0"
+              className="input-field"
+            />
+            {form.compare_at_price_paise && form.compare_at_price_paise > form.price_paise && (
+              <p className="text-xs text-green-600 mt-1">
+                💰 {Math.round(((form.compare_at_price_paise - form.price_paise) / form.compare_at_price_paise) * 100)}% off — shows strikethrough price on mobile
+              </p>
+            )}
+            {form.compare_at_price_paise && form.compare_at_price_paise <= form.price_paise && (
+              <p className="text-xs text-red-500 mt-1">
+                ⚠️ Compare price must be higher than selling price
               </p>
             )}
           </Field>

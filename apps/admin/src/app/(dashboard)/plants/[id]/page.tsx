@@ -49,6 +49,7 @@ export default async function EditPlantPage({
           description: plant.description ?? "",
           category_id: plant.category_id,
           price_paise: plant.price_paise,
+          compare_at_price_paise: plant.compare_at_price_paise ?? null,
           stock_quantity: plant.stock_quantity,
           image_url: plant.image_url ?? "",
           images: (plant.images as string[]) ?? [],
