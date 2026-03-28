@@ -139,6 +139,7 @@ export default function SearchScreen() {
                 <Image
                   source={{ uri: item.image_url || item.images?.[0] }}
                   style={styles.cardImage}
+                  resizeMode="cover"
                 />
               ) : (
                 <View style={[styles.cardImage, styles.cardPlaceholder]}>

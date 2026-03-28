@@ -26,6 +26,7 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export default function PlantDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const { data: plant, isLoading, error } = useQuery({
     queryKey: ["plant", slug],
@@ -48,8 +49,6 @@ export default function PlantDetailScreen() {
       </View>
     );
   }
-
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   // Combine primary image + additional images into a single array
   const allImages: string[] = [];

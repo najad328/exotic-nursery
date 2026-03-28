@@ -100,6 +100,7 @@ export default function HomeScreen() {
                 <Image
                   source={{ uri: item.image_url || item.images?.[0] }}
                   style={styles.plantImage}
+                  resizeMode="cover"
                 />
               ) : (
                 <View style={[styles.plantImage, styles.plantImagePlaceholder]}>
