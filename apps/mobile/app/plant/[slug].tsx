@@ -91,7 +91,7 @@ export default function PlantDetailScreen() {
                 <Image
                   source={{ uri: item }}
                   style={[styles.image, { width: SCREEN_WIDTH }]}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
               )}
             />
