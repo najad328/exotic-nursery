@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,10 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Share,
+  Linking,
 } from "react-native";
+// Clipboard helper that works on both web and native
 import { useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -183,6 +186,9 @@ export default function PlantDetailScreen() {
               : "Out of stock"}
           </Text>
 
+          {/* Share */}
+          <ShareBar plantName={plant.name} plantSlug={plant.slug} price={formatPriceINR(plant.price_paise)} />
+
           {/* Description */}
           <Text style={styles.sectionTitle}>About this plant</Text>
           <Text style={styles.description}>{plant.description}</Text>
@@ -331,6 +337,86 @@ function AddToCartBar({
   );
 }
 
+function ShareBar({
+  plantName,
+  plantSlug,
+  price,
+}: {
+  plantName: string;
+  plantSlug: string;
+  price: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  // In production, replace with your actual deep link / web URL
+  const shareUrl = `https://exotic-nursery.app/plant/${plantSlug}`;
+  const shareMessage = `Check out ${plantName} at Exotic Nursery! ${price}\n${shareUrl}`;
+
+  async function handleNativeShare() {
+    try {
+      await Share.share({
+        message: shareMessage,
+        title: `${plantName} — Exotic Nursery`,
+      });
+    } catch (_err) {
+      // User cancelled
+    }
+  }
+
+  function handleWhatsAppShare() {
+    const encoded = encodeURIComponent(shareMessage);
+    const url = `https://wa.me/?text=${encoded}`;
+    Linking.openURL(url);
+  }
+
+  function handleFacebookShare() {
+    const encoded = encodeURIComponent(shareUrl);
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encoded}`;
+    Linking.openURL(url);
+  }
+
+  async function handleCopyLink() {
+    if (Platform.OS === "web" && navigator?.clipboard) {
+      await navigator.clipboard.writeText(shareUrl);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <View style={styles.shareContainer}>
+      <Text style={styles.shareTitle}>Share this plant</Text>
+      <View style={styles.shareRow}>
+        <Pressable style={styles.shareBtn} onPress={handleWhatsAppShare}>
+          <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+          <Text style={styles.shareBtnText}>WhatsApp</Text>
+        </Pressable>
+
+        <Pressable style={styles.shareBtn} onPress={handleFacebookShare}>
+          <Ionicons name="logo-facebook" size={20} color="#1877F2" />
+          <Text style={styles.shareBtnText}>Facebook</Text>
+        </Pressable>
+
+        <Pressable style={styles.shareBtn} onPress={handleCopyLink}>
+          <Ionicons
+            name={copied ? "checkmark-circle" : "link"}
+            size={20}
+            color={copied ? "#2E7D32" : "#666"}
+          />
+          <Text style={[styles.shareBtnText, copied && { color: "#2E7D32" }]}>
+            {copied ? "Copied!" : "Copy Link"}
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.shareBtn} onPress={handleNativeShare}>
+          <Ionicons name="share-outline" size={20} color="#666" />
+          <Text style={styles.shareBtnText}>More</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function CareItem({
   icon,
   label,
@@ -375,6 +461,40 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  shareContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+  },
+  shareTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#888",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  shareRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  shareBtn: {
+    flex: 1,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 10,
+  },
+  shareBtnText: {
+    fontSize: 11,
+    color: "#666",
+    fontWeight: "500",
   },
   dotsContainer: {
     flexDirection: "row",
