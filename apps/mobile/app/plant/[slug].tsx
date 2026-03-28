@@ -27,6 +27,7 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 export default function PlantDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
 
   const { data: plant, isLoading, error } = useQuery({
     queryKey: ["plant", slug],
@@ -80,6 +81,7 @@ export default function PlantDetailScreen() {
         {allImages.length > 0 ? (
           <View>
             <FlatList
+              ref={flatListRef}
               data={allImages}
               horizontal
               pagingEnabled
@@ -95,6 +97,30 @@ export default function PlantDetailScreen() {
                 />
               )}
             />
+            {allImages.length > 1 && activeImageIndex > 0 && (
+              <Pressable
+                style={[styles.carouselNav, styles.carouselNavLeft]}
+                onPress={() => {
+                  const newIndex = activeImageIndex - 1;
+                  flatListRef.current?.scrollToIndex({ index: newIndex, animated: true });
+                  setActiveImageIndex(newIndex);
+                }}
+              >
+                <Ionicons name="chevron-back" size={22} color="#fff" />
+              </Pressable>
+            )}
+            {allImages.length > 1 && activeImageIndex < allImages.length - 1 && (
+              <Pressable
+                style={[styles.carouselNav, styles.carouselNavRight]}
+                onPress={() => {
+                  const newIndex = activeImageIndex + 1;
+                  flatListRef.current?.scrollToIndex({ index: newIndex, animated: true });
+                  setActiveImageIndex(newIndex);
+                }}
+              >
+                <Ionicons name="chevron-forward" size={22} color="#fff" />
+              </Pressable>
+            )}
             {allImages.length > 1 && (
               <View style={styles.dotsContainer}>
                 {allImages.map((_, idx) => (
@@ -386,6 +412,24 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
+  },
+  carouselNav: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  carouselNavLeft: {
+    left: 10,
+  },
+  carouselNavRight: {
+    right: 10,
   },
   placeholderEmoji: {
     fontSize: 80,
