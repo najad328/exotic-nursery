@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { formatPrice, buildOrderStatusWhatsAppUrl, interpolateTemplate } from "@exotic-nursery/utils";
+import { formatPrice, buildOrderStatusWhatsAppUrl, interpolateTemplate, ShiprocketService } from "@exotic-nursery/utils";
 import { createSupabaseBrowserClient } from "../../../../lib/supabase-browser";
 
 const STATUS_FLOW = [
@@ -48,6 +48,16 @@ interface OrderData {
   delivery_city: string;
   delivery_pincode: string;
   notes: string | null;
+  // Courier tracking
+  tracking_number: string | null;
+  courier_name: string | null;
+  courier_tracking_url: string | null;
+  estimated_delivery_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  shiprocket_order_id: string | null;
+  shiprocket_shipment_id: string | null;
+  awb_code: string | null;
   created_at: string;
   updated_at: string;
   order_items: Array<{
@@ -92,6 +102,18 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Courier/shipping state
+  const [shipping, setShipping] = useState(false);
+  const [shipWeight, setShipWeight] = useState("0.5");
+  const [showShipModal, setShowShipModal] = useState(false);
+  const [shipmentEvents, setShipmentEvents] = useState<Array<{
+    id: string;
+    status: string;
+    location: string | null;
+    description: string;
+    event_time: string;
+  }>>([]);
+
   // WhatsApp state
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -109,6 +131,15 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
     item_count: String(order.order_items.length),
     items_summary: order.order_items.map((i) => `${i.plant_name} ×${i.quantity}`).join(", "),
     payment_method: order.payment_method.toUpperCase(),
+    courier_name: order.courier_name ?? "N/A",
+    tracking_url: order.courier_tracking_url ?? "",
+    awb_code: order.awb_code ?? "N/A",
+    estimated_delivery: order.estimated_delivery_at
+      ? new Date(order.estimated_delivery_at).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "long",
+        })
+      : "TBD",
   };
 
   // Fetch templates on mount
@@ -148,6 +179,115 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
   useEffect(() => {
     updatePreview();
   }, [updatePreview]);
+
+  // Load shipment events if courier is assigned
+  useEffect(() => {
+    if (!order.awb_code) return;
+    async function loadEvents() {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from("shipment_events" as "orders")
+        .select("id, status, location, description, event_time")
+        .eq("order_id" as "id", order.id)
+        .order("event_time" as "created_at", { ascending: false });
+      if (data) setShipmentEvents(data as unknown as Array<{
+        id: string;
+        status: string;
+        location: string | null;
+        description: string;
+        event_time: string;
+      }>);
+    }
+    loadEvents();
+  }, [order.awb_code, order.id]);
+
+  async function handleShipWithCourier() {
+    setShipping(true);
+    setMessage("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+
+      const shiprocket = new ShiprocketService();
+
+      const result = await shiprocket.shipOrder({
+        order_id: order.id.slice(0, 8),
+        order_date: new Date(order.created_at).toISOString().split("T")[0] ?? "",
+        pickup_location: "Primary",
+        billing_customer_name: order.delivery_name,
+        billing_address: order.delivery_address,
+        billing_city: order.delivery_city,
+        billing_pincode: order.delivery_pincode,
+        billing_state: "Kerala",
+        billing_country: "India",
+        billing_email: "",
+        billing_phone: order.delivery_phone,
+        shipping_is_billing: true,
+        order_items: order.order_items.map((item) => ({
+          name: item.plant_name,
+          sku: item.id.slice(0, 8),
+          units: item.quantity,
+          selling_price: item.price_paise / 100,
+        })),
+        payment_method: order.payment_method === "cod" ? "COD" : "Prepaid",
+        sub_total: order.subtotal_paise / 100,
+        length: 20,
+        breadth: 15,
+        height: 15,
+        weight: parseFloat(shipWeight) || 0.5,
+      });
+
+      // Update order in DB
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          status: "shipped",
+          tracking_number: result.awb_code,
+          courier_name: result.courier_name,
+          courier_tracking_url: result.courier_tracking_url,
+          estimated_delivery_at: result.estimated_delivery_at
+            ? new Date(result.estimated_delivery_at).toISOString()
+            : null,
+          shipped_at: new Date().toISOString(),
+          shiprocket_order_id: result.shiprocket_order_id,
+          shiprocket_shipment_id: result.shiprocket_shipment_id,
+          awb_code: result.awb_code,
+        })
+        .eq("id", order.id);
+
+      if (error) throw error;
+
+      // Insert initial shipment event
+      await (supabase.from("shipment_events" as "orders") as unknown as { insert: (data: Record<string, unknown>) => Promise<unknown> }).insert({
+        order_id: order.id,
+        status: "Shipped",
+        location: "Warehouse",
+        description: `Shipment created via ${result.courier_name}. AWB: ${result.awb_code}`,
+        event_time: new Date().toISOString(),
+      });
+
+      setOrder((prev) => ({
+        ...prev,
+        status: "shipped",
+        tracking_number: result.awb_code,
+        courier_name: result.courier_name,
+        courier_tracking_url: result.courier_tracking_url,
+        awb_code: result.awb_code,
+        shiprocket_order_id: result.shiprocket_order_id,
+        shiprocket_shipment_id: result.shiprocket_shipment_id,
+        shipped_at: new Date().toISOString(),
+        estimated_delivery_at: result.estimated_delivery_at ?? null,
+      }));
+      setNewStatus("shipped");
+      setShowShipModal(false);
+      setMessage(`✅ Shipped via ${result.courier_name}! AWB: ${result.awb_code}`);
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to ship";
+      setMessage(`Error: ${msg}`);
+    } finally {
+      setShipping(false);
+    }
+  }
 
   const currentIndex = STATUS_FLOW.indexOf(order.status as typeof STATUS_FLOW[number]);
   const isCancelled = order.status === "cancelled";
@@ -316,6 +456,178 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Ship with Courier */}
+      {!isCancelled && !isDelivered && !order.awb_code &&
+        (order.status === "confirmed" || order.status === "processing") && (
+        <div className="bg-purple-50 rounded-lg border border-purple-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-purple-800">📦 Ship with Courier</h3>
+              <p className="text-sm text-purple-600 mt-1">
+                Create a shipment via Shiprocket — auto-assigns the best courier
+              </p>
+            </div>
+            <button
+              onClick={() => setShowShipModal(true)}
+              className="bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors"
+            >
+              Ship Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ship Modal */}
+      {showShipModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Ship via Courier</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Package Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  value={shipWeight}
+                  onChange={(e) => setShipWeight(e.target.value)}
+                  step="0.1"
+                  min="0.1"
+                  max="50"
+                  className="input-field w-full"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Default package dimensions: 20×15×15 cm
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3 text-sm">
+                <p className="font-medium text-gray-700">Shipping to:</p>
+                <p className="text-gray-500 mt-1">
+                  {order.delivery_name}<br />
+                  {order.delivery_address}, {order.delivery_city} — {order.delivery_pincode}
+                </p>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                ⚡ Running in <strong>mock mode</strong> — no real shipment will be created.
+                Connect Shiprocket credentials in env to go live.
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleShipWithCourier}
+                  disabled={shipping}
+                  className="flex-1 bg-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-600 disabled:opacity-50 transition-colors"
+                >
+                  {shipping ? "Creating Shipment..." : "Create Shipment"}
+                </button>
+                <button
+                  onClick={() => setShowShipModal(false)}
+                  disabled={shipping}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Courier Tracking Info */}
+      {order.awb_code && (
+        <div className="bg-white rounded-lg border border-purple-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-2xl">🚚</span>
+            <h3 className="font-semibold text-gray-800">Courier Tracking</h3>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <p className="text-xs text-gray-500">Courier</p>
+              <p className="font-medium text-gray-800">{order.courier_name}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">AWB / Tracking #</p>
+              <p className="font-mono font-medium text-purple-700">{order.awb_code}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Shipped At</p>
+              <p className="font-medium text-gray-800">
+                {order.shipped_at
+                  ? new Date(order.shipped_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Est. Delivery</p>
+              <p className="font-medium text-gray-800">
+                {order.estimated_delivery_at
+                  ? new Date(order.estimated_delivery_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                    })
+                  : "TBD"}
+              </p>
+            </div>
+          </div>
+
+          {order.courier_tracking_url && (
+            <a
+              href={order.courier_tracking_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-purple-700 text-sm font-medium hover:underline mb-4"
+            >
+              🔗 Open Tracking Page →
+            </a>
+          )}
+
+          {/* Shipment Events Timeline */}
+          {shipmentEvents.length > 0 && (
+            <div className="border-t border-gray-100 pt-4 mt-4">
+              <p className="text-sm font-medium text-gray-600 mb-3">Shipment Events</p>
+              <div className="space-y-3">
+                {shipmentEvents.map((event, idx) => (
+                  <div key={event.id} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          idx === 0 ? "bg-purple-600" : "bg-gray-300"
+                        }`}
+                      />
+                      {idx < shipmentEvents.length - 1 && (
+                        <div className="w-0.5 flex-1 bg-gray-200 mt-1" />
+                      )}
+                    </div>
+                    <div className="flex-1 pb-3">
+                      <p className="text-sm font-medium text-gray-800">
+                        {event.description}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {event.location && `${event.location} · `}
+                        {new Date(event.event_time).toLocaleString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

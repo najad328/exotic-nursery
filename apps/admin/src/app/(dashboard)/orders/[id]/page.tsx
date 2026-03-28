@@ -37,7 +37,18 @@ export default async function OrderDetailPage({
         </span>
       </div>
 
-      <OrderDetailClient order={order} />
+      <OrderDetailClient order={{
+        ...order,
+        tracking_number: (order as Record<string, unknown>).tracking_number as string | null ?? null,
+        courier_name: (order as Record<string, unknown>).courier_name as string | null ?? null,
+        courier_tracking_url: (order as Record<string, unknown>).courier_tracking_url as string | null ?? null,
+        estimated_delivery_at: (order as Record<string, unknown>).estimated_delivery_at as string | null ?? null,
+        shipped_at: (order as Record<string, unknown>).shipped_at as string | null ?? null,
+        delivered_at: (order as Record<string, unknown>).delivered_at as string | null ?? null,
+        shiprocket_order_id: (order as Record<string, unknown>).shiprocket_order_id as string | null ?? null,
+        shiprocket_shipment_id: (order as Record<string, unknown>).shiprocket_shipment_id as string | null ?? null,
+        awb_code: (order as Record<string, unknown>).awb_code as string | null ?? null,
+      }} />
     </div>
   );
 }

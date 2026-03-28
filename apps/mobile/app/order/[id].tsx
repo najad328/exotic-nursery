@@ -6,13 +6,15 @@ import {
   ScrollView,
   ActivityIndicator,
   Pressable,
+  Linking,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { getOrderById } from "../../services/orders";
 import { supabase } from "../../services/supabase";
 import { formatPrice, buildOrderStatusWhatsAppUrl } from "@exotic-nursery/utils";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_FLOW } from "@exotic-nursery/types";
-import type { OrderWithItems, OrderStatus } from "@exotic-nursery/types";
+import type { OrderWithItems, OrderStatus, ShipmentEvent } from "@exotic-nursery/types";
 import { WhatsAppButton } from "../../components/WhatsAppButton";
 
 export default function OrderDetailScreen() {
@@ -20,6 +22,7 @@ export default function OrderDetailScreen() {
   const [order, setOrder] = useState<OrderWithItems | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shipmentEvents, setShipmentEvents] = useState<ShipmentEvent[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -37,13 +40,19 @@ export default function OrderDetailScreen() {
           filter: `id=eq.${id}`,
         },
         (payload) => {
-          const updated = payload.new as { status: string; updated_at: string };
+          const updated = payload.new as Record<string, unknown>;
           setOrder((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              status: updated.status as OrderStatus,
-              updated_at: updated.updated_at,
+              status: (updated.status as OrderStatus) ?? prev.status,
+              updated_at: (updated.updated_at as string) ?? prev.updated_at,
+              tracking_number: (updated.tracking_number as string | null) ?? prev.tracking_number,
+              courier_name: (updated.courier_name as string | null) ?? prev.courier_name,
+              courier_tracking_url: (updated.courier_tracking_url as string | null) ?? prev.courier_tracking_url,
+              estimated_delivery_at: (updated.estimated_delivery_at as string | null) ?? prev.estimated_delivery_at,
+              shipped_at: (updated.shipped_at as string | null) ?? prev.shipped_at,
+              awb_code: (updated.awb_code as string | null) ?? prev.awb_code,
             };
           });
         }
@@ -52,6 +61,41 @@ export default function OrderDetailScreen() {
 
     return () => {
       supabase.removeChannel(channel);
+    };
+  }, [id]);
+
+  // Load shipment events + subscribe to new ones
+  useEffect(() => {
+    if (!id) return;
+    async function loadEvents() {
+      const { data } = await supabase
+        .from("shipment_events" as "orders")
+        .select("*")
+        .eq("order_id" as "id", id!)
+        .order("event_time" as "created_at", { ascending: false });
+      if (data) setShipmentEvents(data as unknown as ShipmentEvent[]);
+    }
+    loadEvents();
+
+    const eventsChannel = supabase
+      .channel(`shipment-events-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "shipment_events",
+          filter: `order_id=eq.${id}`,
+        },
+        (payload) => {
+          const newEvent = payload.new as ShipmentEvent;
+          setShipmentEvents((prev) => [newEvent, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(eventsChannel);
     };
   }, [id]);
 
@@ -171,6 +215,86 @@ export default function OrderDetailScreen() {
               </View>
             );
           })}
+        </View>
+      )}
+
+      {/* Courier Tracking Card */}
+      {order.awb_code && (
+        <View style={[styles.section, styles.courierCard]}>
+          <Text style={styles.sectionTitle}>🚚 Shipment Tracking</Text>
+
+          <View style={styles.courierGrid}>
+            <View style={styles.courierItem}>
+              <Text style={styles.courierLabel}>Courier</Text>
+              <Text style={styles.courierValue}>{order.courier_name}</Text>
+            </View>
+            <View style={styles.courierItem}>
+              <Text style={styles.courierLabel}>AWB #</Text>
+              <Text style={[styles.courierValue, styles.courierAwb]}>
+                {order.awb_code}
+              </Text>
+            </View>
+            {order.estimated_delivery_at && (
+              <View style={styles.courierItem}>
+                <Text style={styles.courierLabel}>Est. Delivery</Text>
+                <Text style={styles.courierValue}>
+                  {new Date(order.estimated_delivery_at).toLocaleDateString(
+                    "en-IN",
+                    { day: "numeric", month: "long" }
+                  )}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {order.courier_tracking_url && (
+            <Pressable
+              style={styles.trackButton}
+              onPress={() => {
+                if (Platform.OS === "web") {
+                  window.open(order.courier_tracking_url!, "_blank");
+                } else {
+                  Linking.openURL(order.courier_tracking_url!);
+                }
+              }}
+            >
+              <Text style={styles.trackButtonText}>🔗 Track Shipment</Text>
+            </Pressable>
+          )}
+
+          {/* Shipment Events Timeline */}
+          {shipmentEvents.length > 0 && (
+            <View style={styles.eventsContainer}>
+              <Text style={styles.eventsTitle}>Tracking Updates</Text>
+              {shipmentEvents.map((event, idx) => (
+                <View key={event.id} style={styles.eventRow}>
+                  <View style={styles.eventDotCol}>
+                    <View
+                      style={[
+                        styles.eventDot,
+                        idx === 0 && styles.eventDotActive,
+                      ]}
+                    />
+                    {idx < shipmentEvents.length - 1 && (
+                      <View style={styles.eventLine} />
+                    )}
+                  </View>
+                  <View style={styles.eventContent}>
+                    <Text style={styles.eventDesc}>{event.description}</Text>
+                    <Text style={styles.eventMeta}>
+                      {event.location ? `${event.location} · ` : ""}
+                      {new Date(event.event_time).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -345,4 +469,95 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  // Courier tracking styles
+  courierCard: {
+    borderColor: "#CE93D8",
+    borderWidth: 1,
+  },
+  courierGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 12,
+  },
+  courierItem: {
+    minWidth: "45%" as unknown as number,
+  },
+  courierLabel: {
+    fontSize: 11,
+    color: "#888",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  courierValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 2,
+  },
+  courierAwb: {
+    fontFamily: "monospace",
+    color: "#7B1FA2",
+  },
+  trackButton: {
+    backgroundColor: "#F3E5F5",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  trackButtonText: {
+    color: "#7B1FA2",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  eventsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: "#EEE",
+    paddingTop: 12,
+  },
+  eventsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    marginBottom: 10,
+  },
+  eventRow: {
+    flexDirection: "row",
+    marginBottom: 4,
+  },
+  eventDotCol: {
+    alignItems: "center",
+    width: 20,
+    marginRight: 10,
+  },
+  eventDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#DDD",
+  },
+  eventDotActive: {
+    backgroundColor: "#7B1FA2",
+  },
+  eventLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: "#EEE",
+    marginTop: 2,
+  },
+  eventContent: {
+    flex: 1,
+    paddingBottom: 14,
+  },
+  eventDesc: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#333",
+  },
+  eventMeta: {
+    fontSize: 11,
+    color: "#999",
+    marginTop: 2,
+  },
 });

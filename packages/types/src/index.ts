@@ -138,6 +138,16 @@ export interface Order {
   delivery_city: string;
   delivery_pincode: string;
   notes: string | null;
+  // Courier tracking fields
+  tracking_number: string | null;
+  courier_name: string | null;
+  courier_tracking_url: string | null;
+  estimated_delivery_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  shiprocket_order_id: string | null;
+  shiprocket_shipment_id: string | null;
+  awb_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -155,6 +165,19 @@ export interface OrderItem {
 
 export interface OrderWithItems extends Order {
   order_items: OrderItem[];
+}
+
+// ---- Shipment Events ----
+
+export interface ShipmentEvent {
+  id: string;
+  order_id: string;
+  status: string;
+  location: string | null;
+  description: string;
+  event_time: string;
+  raw_data: Record<string, unknown> | null;
+  created_at: string;
 }
 
 export interface DeliveryDetails {
