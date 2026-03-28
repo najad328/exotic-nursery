@@ -10,9 +10,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useCartStore } from "../stores/cartStore";
 import { useAuthStore } from "../stores/authStore";
 import { placeOrder } from "../services/orders";
+import { supabase } from "../services/supabase";
 import { formatPrice } from "@exotic-nursery/utils";
 import type { PaymentMethod } from "@exotic-nursery/types";
 
@@ -33,6 +35,8 @@ export default function CheckoutScreen() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
+  const [pincodeStatus, setPincodeStatus] = useState<"idle" | "checking" | "available" | "unavailable">("idle");
+  const [deliveryDays, setDeliveryDays] = useState<number | null>(null);
 
   const deliveryFee = 0; // Free delivery for MVP
   const total = subtotal + deliveryFee;
@@ -40,6 +44,58 @@ export default function CheckoutScreen() {
   function updateField(key: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError("");
+    if (key === "delivery_pincode") {
+      setPincodeStatus("idle");
+      setDeliveryDays(null);
+    }
+  }
+
+  async function checkPincode() {
+    const pincode = form.delivery_pincode.trim();
+    if (pincode.length !== 6) {
+      setError("Enter a valid 6-digit pincode");
+      return;
+    }
+
+    setPincodeStatus("checking");
+    try {
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+      const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+      const session = (await supabase.auth.getSession()).data.session;
+
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/delivery_pincodes?pincode=eq.${pincode}&is_active=eq.true&select=pincode,area_name,city,delivery_days&limit=1`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${session?.access_token ?? supabaseKey}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Network error");
+
+      const rows = (await res.json()) as Array<{
+        pincode: string;
+        area_name: string | null;
+        city: string | null;
+        delivery_days: number;
+      }>;
+
+      if (rows.length > 0) {
+        setPincodeStatus("available");
+        setDeliveryDays(rows[0].delivery_days);
+        if (!form.delivery_city && rows[0].city) {
+          setForm((prev) => ({ ...prev, delivery_city: rows[0].city! }));
+        }
+      } else {
+        setPincodeStatus("unavailable");
+        setDeliveryDays(null);
+      }
+    } catch {
+      setPincodeStatus("idle");
+      setError("Failed to check pincode. Try again.");
+    }
   }
 
   async function handlePlaceOrder() {
@@ -51,6 +107,7 @@ export default function CheckoutScreen() {
     if (!form.delivery_city.trim()) return setError("City is required");
     if (!form.delivery_pincode.trim()) return setError("Pincode is required");
     if (form.delivery_pincode.trim().length !== 6) return setError("Enter a valid 6-digit pincode");
+    if (pincodeStatus !== "available") return setError("Please check pincode availability before placing the order");
 
     if (items.length === 0) return setError("Cart is empty");
 
@@ -147,26 +204,58 @@ export default function CheckoutScreen() {
             placeholder="Street, area, landmark"
             multiline
           />
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Field
-                label="City"
-                value={form.delivery_city}
-                onChangeText={(v) => updateField("delivery_city", v)}
-                placeholder="City"
-              />
-            </View>
-            <View style={styles.halfField}>
-              <Field
-                label="Pincode"
+          {/* Pincode check */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Delivery Pincode *</Text>
+            <View style={styles.pincodeRow}>
+              <TextInput
+                style={[styles.input, styles.pincodeInput]}
                 value={form.delivery_pincode}
                 onChangeText={(v) => updateField("delivery_pincode", v)}
-                placeholder="6-digit"
+                placeholder="Enter 6-digit pincode"
+                placeholderTextColor="#AAA"
                 keyboardType="number-pad"
                 maxLength={6}
               />
+              <Pressable
+                style={[
+                  styles.checkButton,
+                  pincodeStatus === "checking" && { opacity: 0.6 },
+                ]}
+                onPress={checkPincode}
+                disabled={pincodeStatus === "checking"}
+              >
+                {pincodeStatus === "checking" ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.checkButtonText}>Check</Text>
+                )}
+              </Pressable>
             </View>
+            {pincodeStatus === "available" && (
+              <View style={styles.pincodeSuccess}>
+                <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+                <Text style={styles.pincodeSuccessText}>
+                  Delivery available! Estimated {deliveryDays} day{deliveryDays !== 1 ? "s" : ""}
+                </Text>
+              </View>
+            )}
+            {pincodeStatus === "unavailable" && (
+              <View style={styles.pincodeError}>
+                <Ionicons name="close-circle" size={16} color="#C62828" />
+                <Text style={styles.pincodeErrorText}>
+                  Sorry, we don't deliver to this pincode yet
+                </Text>
+              </View>
+            )}
           </View>
+
+          <Field
+            label="City"
+            value={form.delivery_city}
+            onChangeText={(v) => updateField("delivery_city", v)}
+            placeholder="City"
+          />
           <Field
             label="Notes (optional)"
             value={form.notes}
@@ -347,6 +436,31 @@ const styles = StyleSheet.create({
   inputMultiline: { minHeight: 70, textAlignVertical: "top" },
   row: { flexDirection: "row", gap: 12 },
   halfField: { flex: 1 },
+  pincodeRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+  pincodeInput: { flex: 1 },
+  checkButton: {
+    backgroundColor: "#1B5E20",
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkButtonText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  pincodeSuccess: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+  },
+  pincodeSuccessText: { color: "#2E7D32", fontSize: 13, fontWeight: "500" },
+  pincodeError: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+  },
+  pincodeErrorText: { color: "#C62828", fontSize: 13, fontWeight: "500" },
   paymentOption: {
     flexDirection: "row",
     alignItems: "center",
