@@ -51,7 +51,7 @@ export default function SearchScreen() {
   };
 
   const activeFilterCount =
-    (selectedCareLevel ? 1 : 0) + (selectedPriceRange > 0 ? 1 : 0);
+    (selectedCategory ? 1 : 0) + (selectedCareLevel ? 1 : 0) + (selectedPriceRange > 0 ? 1 : 0);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -75,6 +75,7 @@ export default function SearchScreen() {
   );
 
   function clearFilters() {
+    setSelectedCategory("");
     setSelectedCareLevel("");
     setSelectedPriceRange(0);
   }
@@ -147,6 +148,17 @@ export default function SearchScreen() {
       {/* Active filter tags */}
       {activeFilterCount > 0 && (
         <View style={styles.activeFilters}>
+          {selectedCategory !== "" && (
+            <Pressable
+              style={styles.filterTag}
+              onPress={() => setSelectedCategory("")}
+            >
+              <Text style={styles.filterTagText}>
+                {categories?.find((c) => c.slug === selectedCategory)?.name ?? selectedCategory}
+              </Text>
+              <Ionicons name="close" size={14} color="#1B5E20" />
+            </Pressable>
+          )}
           {selectedCareLevel !== "" && (
             <Pressable
               style={styles.filterTag}
@@ -253,6 +265,32 @@ export default function SearchScreen() {
               <Pressable onPress={() => setShowFilters(false)}>
                 <Ionicons name="close" size={24} color="#333" />
               </Pressable>
+            </View>
+
+            {/* Category */}
+            <Text style={styles.filterSectionTitle}>Category</Text>
+            <View style={styles.filterChips}>
+              {categories?.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  style={[
+                    styles.filterChip,
+                    selectedCategory === cat.slug && styles.filterChipActive,
+                  ]}
+                  onPress={() =>
+                    setSelectedCategory((prev) => (prev === cat.slug ? "" : cat.slug))
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      selectedCategory === cat.slug && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {cat.name}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
 
             {/* Care Level */}
