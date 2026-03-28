@@ -16,7 +16,7 @@ import {
   Linking,
 } from "react-native";
 // Clipboard helper that works on both web and native
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { getPlantBySlug } from "../../services/plants";
@@ -280,6 +280,7 @@ function AddToCartBar({
   stockQuantity: number;
   pricePaise: number;
 }) {
+  const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
@@ -289,7 +290,6 @@ function AddToCartBar({
     try {
       await addItem(plantId);
       setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
     } catch {
       if (Platform.OS === "web") {
         window.alert("Failed to add to cart. Please try again.");
@@ -309,30 +309,35 @@ function AddToCartBar({
           {formatPriceINR(pricePaise)}
         </Text>
       </View>
-      <Pressable
-        style={[
-          styles.addToCartButton,
-          outOfStock && styles.addToCartDisabled,
-          added && styles.addToCartAdded,
-        ]}
-        disabled={outOfStock || adding}
-        onPress={handleAdd}
-      >
-        {adding ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <>
-            <Ionicons
-              name={added ? "checkmark-circle" : "cart"}
-              size={22}
-              color="#fff"
-            />
-            <Text style={styles.addToCartText}>
-              {outOfStock ? "Out of Stock" : added ? "Added!" : "Add to Cart"}
-            </Text>
-          </>
-        )}
-      </Pressable>
+      {added ? (
+        <Pressable
+          style={[styles.addToCartButton, styles.goToCartButton]}
+          onPress={() => router.push("/(tabs)/cart")}
+        >
+          <Ionicons name="cart" size={22} color="#fff" />
+          <Text style={styles.addToCartText}>Go to Cart</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          style={[
+            styles.addToCartButton,
+            outOfStock && styles.addToCartDisabled,
+          ]}
+          disabled={outOfStock || adding}
+          onPress={handleAdd}
+        >
+          {adding ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Ionicons name="cart" size={22} color="#fff" />
+              <Text style={styles.addToCartText}>
+                {outOfStock ? "Out of Stock" : "Add to Cart"}
+              </Text>
+            </>
+          )}
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -701,6 +706,9 @@ const styles = StyleSheet.create({
   },
   addToCartAdded: {
     backgroundColor: "#2E7D32",
+  },
+  goToCartButton: {
+    backgroundColor: "#E65100",
   },
   addToCartText: {
     color: "#fff",
