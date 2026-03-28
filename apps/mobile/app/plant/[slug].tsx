@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  FlatList,
+  Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +21,8 @@ import { formatPriceINR } from "@exotic-nursery/types";
 import { useCartStore } from "../../stores/cartStore";
 import { WhatsAppButton } from "../../components/WhatsAppButton";
 import { buildPlantInquiryWhatsAppUrl } from "@exotic-nursery/utils";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export default function PlantDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -43,6 +49,17 @@ export default function PlantDetailScreen() {
     );
   }
 
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Combine primary image + additional images into a single array
+  const allImages: string[] = [];
+  if (plant.image_url) allImages.push(plant.image_url);
+  if (plant.images && Array.isArray(plant.images)) {
+    for (const img of plant.images) {
+      if (img && !allImages.includes(img)) allImages.push(img);
+    }
+  }
+
   const discount = plant.compare_at_price_paise
     ? Math.round(
         ((plant.compare_at_price_paise - plant.price_paise) /
@@ -51,12 +68,55 @@ export default function PlantDetailScreen() {
       )
     : null;
 
+  function handleImageScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    setActiveImageIndex(index);
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Image */}
-        {plant.image_url ? (
-          <Image source={{ uri: plant.image_url }} style={styles.image} />
+        {/* Image Carousel */}
+        {allImages.length > 0 ? (
+          <View>
+            <FlatList
+              data={allImages}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleImageScroll}
+              scrollEventThrottle={16}
+              keyExtractor={(item, idx) => `img-${idx}`}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={[styles.image, { width: SCREEN_WIDTH }]}
+                  resizeMode="cover"
+                />
+              )}
+            />
+            {allImages.length > 1 && (
+              <View style={styles.dotsContainer}>
+                {allImages.map((_, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.dot,
+                      idx === activeImageIndex ? styles.dotActive : styles.dotInactive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+            {allImages.length > 1 && (
+              <View style={styles.imageCounter}>
+                <Text style={styles.imageCounterText}>
+                  {activeImageIndex + 1}/{allImages.length}
+                </Text>
+              </View>
+            )}
+          </View>
         ) : (
           <View style={[styles.image, styles.imagePlaceholder]}>
             <Text style={styles.placeholderEmoji}>🌿</Text>
@@ -290,6 +350,43 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    position: "absolute",
+    bottom: 12,
+    left: 0,
+    right: 0,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  dotActive: {
+    backgroundColor: "#1B5E20",
+    width: 20,
+    borderRadius: 4,
+  },
+  dotInactive: {
+    backgroundColor: "rgba(255,255,255,0.7)",
+  },
+  imageCounter: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  imageCounterText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
   },
   placeholderEmoji: {
     fontSize: 80,

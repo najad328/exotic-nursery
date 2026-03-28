@@ -96,9 +96,9 @@ export default function HomeScreen() {
               style={styles.plantCard}
               onPress={() => router.push(`/plant/${item.slug}`)}
             >
-              {item.image_url ? (
+              {(item.image_url || (item.images && item.images.length > 0)) ? (
                 <Image
-                  source={{ uri: item.image_url }}
+                  source={{ uri: item.image_url || item.images?.[0] }}
                   style={styles.plantImage}
                 />
               ) : (

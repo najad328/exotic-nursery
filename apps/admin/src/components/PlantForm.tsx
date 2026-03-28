@@ -90,6 +90,25 @@ export function PlantForm({
     }
   }
 
+  async function uploadSingleImage(file: File): Promise<string> {
+    const supabase = createSupabaseBrowserClient();
+    const ext = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const filePath = `plants/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("plant-images")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from("plant-images")
+      .getPublicUrl(filePath);
+
+    return urlData.publicUrl;
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -101,28 +120,64 @@ export function PlantForm({
 
     setUploadingImage(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const ext = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const filePath = `plants/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("plant-images")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("plant-images")
-        .getPublicUrl(filePath);
-
-      updateField("image_url", urlData.publicUrl);
+      const url = await uploadSingleImage(file);
+      updateField("image_url", url);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload failed";
       setErrors((prev) => ({ ...prev, image_url: message }));
     } finally {
       setUploadingImage(false);
     }
+  }
+
+  async function handleAdditionalImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const maxImages = 5;
+    const currentCount = form.images.length;
+    if (currentCount >= maxImages) {
+      setErrors((prev) => ({ ...prev, images: `Maximum ${maxImages} additional images allowed` }));
+      return;
+    }
+
+    setUploadingImage(true);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.images;
+      return next;
+    });
+
+    try {
+      const filesToUpload = Array.from(files).slice(0, maxImages - currentCount);
+      const uploadedUrls: string[] = [];
+
+      for (const file of filesToUpload) {
+        if (file.size > 5 * 1024 * 1024) {
+          setErrors((prev) => ({
+            ...prev,
+            images: `${file.name} exceeds 5MB limit — skipped`,
+          }));
+          continue;
+        }
+        const url = await uploadSingleImage(file);
+        uploadedUrls.push(url);
+      }
+
+      updateField("images", [...form.images, ...uploadedUrls]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setErrors((prev) => ({ ...prev, images: message }));
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  function removeAdditionalImage(index: number) {
+    updateField(
+      "images",
+      form.images.filter((_, i) => i !== index)
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -307,13 +362,14 @@ export function PlantForm({
         </div>
       </fieldset>
 
-      {/* Image */}
+      {/* Images */}
       <fieldset className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
         <legend className="text-sm font-semibold text-gray-700 px-2">
-          Image
+          Images
         </legend>
 
-        <Field label="Upload Image" error={errors.image_url}>
+        {/* Primary Image */}
+        <Field label="Primary Image (featured)" error={errors.image_url}>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -328,11 +384,16 @@ export function PlantForm({
 
         {form.image_url && (
           <div className="flex items-center gap-4">
-            <img
-              src={form.image_url}
-              alt="Preview"
-              className="w-24 h-24 rounded-lg object-cover border"
-            />
+            <div className="relative">
+              <img
+                src={form.image_url}
+                alt="Primary"
+                className="w-24 h-24 rounded-lg object-cover border-2 border-green-500"
+              />
+              <span className="absolute -top-2 -left-2 bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                Primary
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => updateField("image_url", "")}
@@ -352,6 +413,50 @@ export function PlantForm({
             className="input-field text-sm"
           />
         </Field>
+
+        {/* Additional Images */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <Field
+            label={`Additional Images (${form.images.length}/5)`}
+            error={errors.images}
+          >
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={handleAdditionalImageUpload}
+              disabled={uploadingImage || form.images.length >= 5}
+              className="input-field text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:font-medium file:cursor-pointer disabled:opacity-50"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Upload up to 5 additional images. Max 5MB each. JPEG, PNG, or WebP.
+            </p>
+          </Field>
+
+          {form.images.length > 0 && (
+            <div className="flex flex-wrap gap-3 mt-3">
+              {form.images.map((url, idx) => (
+                <div key={idx} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Image ${idx + 1}`}
+                    className="w-20 h-20 rounded-lg object-cover border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalImage(idx)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ×
+                  </button>
+                  <span className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] px-1 rounded-tl">
+                    {idx + 1}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </fieldset>
 
       {/* Care Info */}
