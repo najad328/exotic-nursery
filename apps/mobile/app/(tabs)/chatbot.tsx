@@ -19,6 +19,7 @@ import {
   SUGGESTED_QUESTIONS,
 } from "../../services/chat";
 import { colors, radius, shadows, spacing } from "../../theme";
+import { AloeAvatar, AloeBadge, AloeIcon } from "../../components/AloeIcon";
 import type { ChatHistoryItem } from "../../services/chat";
 
 export default function ChatbotScreen() {
@@ -139,10 +140,8 @@ export default function ChatbotScreen() {
       {messages.length > 0 && (
         <View style={styles.headerBar}>
           <View style={styles.headerLeft}>
-            <View style={styles.headerIconCircle}>
-              <Text style={styles.headerIcon}>&#127807;</Text>
-            </View>
-            <Text style={styles.headerText}>Plant Care Assistant</Text>
+            <AloeIcon size={24} />
+            <Text style={styles.headerText}>Aloe AI</Text>
           </View>
           <Pressable onPress={handleClear} style={styles.clearButton}>
             <Text style={styles.clearButtonText}>Clear</Text>
@@ -153,12 +152,11 @@ export default function ChatbotScreen() {
       {/* Messages */}
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIconCircle}>
-            <Text style={styles.emptyIcon}>&#127793;</Text>
-          </View>
-          <Text style={styles.emptyTitle}>Plant Care Assistant</Text>
+          <AloeAvatar size={88} />
+          <Text style={styles.emptyTitle}>Aloe AI</Text>
+          <Text style={styles.emptyGreeting}>Aloe there! 🌿</Text>
           <Text style={styles.emptySubtitle}>
-            Ask me anything about plant care, growing tips, or diagnosing plant problems!
+            I'm your plant care assistant. Ask me about watering, sunlight, repotting, or diagnosing plant problems!
           </Text>
           <View style={styles.suggestions}>
             {SUGGESTED_QUESTIONS.map((q) => (
@@ -186,9 +184,7 @@ export default function ChatbotScreen() {
                 item.role === "user" ? styles.userBubble : styles.assistantBubble,
               ]}
             >
-              {item.role === "assistant" && (
-                <Text style={styles.bubbleLabel}>Plant Assistant</Text>
-              )}
+              {item.role === "assistant" && <AloeBadge />}
               <Text
                 style={[
                   styles.bubbleText,
@@ -286,17 +282,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-  headerIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primaryContainer,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerIcon: {
-    fontSize: 14,
-  },
   headerText: {
     fontSize: 15,
     fontWeight: "600",
@@ -319,23 +304,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.xxl,
   },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primaryContainer,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  emptyIcon: {
-    fontSize: 36,
-  },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
-    color: colors.onBackground,
+    color: colors.primary,
     letterSpacing: -0.3,
+    marginTop: spacing.lg,
+  },
+  emptyGreeting: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.onBackground,
+    marginTop: spacing.xs,
   },
   emptySubtitle: {
     fontSize: 14,
@@ -390,13 +370,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.outlineVariant,
     ...shadows.sm,
-  },
-  bubbleLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.primary,
-    marginBottom: spacing.xs,
-    letterSpacing: 0.3,
   },
   bubbleText: {
     fontSize: 15,
