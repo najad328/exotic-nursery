@@ -84,8 +84,8 @@ export async function sendChatMessage(
   userMessage: string,
   history: ChatHistoryItem[]
 ): Promise<string> {
-  // Build message context from recent history (last 10 messages for context window)
-  const recentHistory = history.slice(-10);
+  // Build message context from recent history (last 20 messages for context window)
+  const recentHistory = history.slice(-20);
   const messages: ChatMessage[] = recentHistory.map((h) => ({
     role: h.role,
     content: h.content,

@@ -28,6 +28,7 @@ export default function ChatbotScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const flatListRef = useRef<FlatList>(null);
+  const messagesRef = useRef<ChatHistoryItem[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,6 +47,11 @@ export default function ChatbotScreen() {
       setLoading(false);
     }
   }
+
+  // Keep ref in sync with state so we always have latest messages
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   async function handleSend(text?: string) {
     const messageText = (text ?? input).trim();
@@ -68,8 +74,9 @@ export default function ChatbotScreen() {
       // Save user message to DB
       await saveChatMessage("user", messageText);
 
-      // Get AI response
-      const response = await sendChatMessage(messageText, messages);
+      // Use ref to get latest messages (avoids stale closure)
+      const currentHistory = messagesRef.current;
+      const response = await sendChatMessage(messageText, currentHistory);
 
       // Add assistant message
       const assistantMsg: ChatHistoryItem = {
