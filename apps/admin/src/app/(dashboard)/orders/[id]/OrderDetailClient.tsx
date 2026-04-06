@@ -461,7 +461,7 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
 
       {/* Ship with Courier */}
       {!isCancelled && !isDelivered && !order.awb_code &&
-        (order.status === "confirmed" || order.status === "processing") && (
+        (order.status === "pending" || order.status === "confirmed" || order.status === "processing") && (
         <div className="bg-purple-50 rounded-lg border border-purple-200 p-6">
           <div className="flex items-center justify-between">
             <div>

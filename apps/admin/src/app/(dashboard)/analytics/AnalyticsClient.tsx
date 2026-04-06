@@ -1,20 +1,8 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+import { useEffect, useRef, useState } from "react";
+import { createChart, ColorType, LineSeries, HistogramSeries } from "lightweight-charts";
+import type { IChartApi, ISeriesApi, Time } from "lightweight-charts";
 
 interface DailyData {
   date: string;
@@ -43,11 +31,271 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "#EF4444",
 };
 
-const PIE_COLORS = ["#F59E0B", "#3B82F6", "#6366F1", "#8B5CF6", "#F97316", "#10B981", "#EF4444"];
-
 function formatRevenue(paise: number): string {
-  return `₹${(paise / 100).toFixed(0)}`;
+  return `₹${(paise / 100).toLocaleString("en-IN")}`;
 }
+
+// ---------- TradingView Lightweight Chart Wrappers ----------
+
+function OrdersChart({ data }: { data: DailyData[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || data.length === 0) return;
+
+    const chart = createChart(containerRef.current, {
+      height: 300,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#64748B",
+        fontFamily: "Inter, system-ui, sans-serif",
+        fontSize: 12,
+      },
+      grid: {
+        vertLines: { color: "#F1F5F9" },
+        horzLines: { color: "#F1F5F9" },
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        scaleMargins: { top: 0.1, bottom: 0.05 },
+      },
+      timeScale: {
+        borderVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+      },
+      crosshair: {
+        vertLine: { color: "#1B5E2040", width: 1, style: 3, labelBackgroundColor: "#1B5E20" },
+        horzLine: { color: "#1B5E2040", width: 1, style: 3, labelBackgroundColor: "#1B5E20" },
+      },
+      handleScroll: false,
+      handleScale: false,
+    });
+
+    const series: ISeriesApi<"Histogram"> = chart.addSeries(HistogramSeries, {
+      color: "#1B5E20",
+      priceFormat: { type: "volume" },
+    });
+
+    series.setData(
+      data.map((d) => ({
+        time: d.date as Time,
+        value: d.orders,
+        color: d.orders > 0 ? "#1B5E20" : "#E2E8F0",
+      }))
+    );
+
+    chart.timeScale().fitContent();
+    chartRef.current = chart;
+
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        chart.applyOptions({ width: containerRef.current.clientWidth });
+      }
+    });
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, [data]);
+
+  return <div ref={containerRef} className="w-full" />;
+}
+
+function RevenueChart({ data }: { data: DailyData[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || data.length === 0) return;
+
+    const chart = createChart(containerRef.current, {
+      height: 300,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#64748B",
+        fontFamily: "Inter, system-ui, sans-serif",
+        fontSize: 12,
+      },
+      grid: {
+        vertLines: { color: "#F1F5F9" },
+        horzLines: { color: "#F1F5F9" },
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        scaleMargins: { top: 0.1, bottom: 0.05 },
+      },
+      timeScale: {
+        borderVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+      },
+      crosshair: {
+        vertLine: { color: "#2E7D3240", width: 1, style: 3, labelBackgroundColor: "#2E7D32" },
+        horzLine: { color: "#2E7D3240", width: 1, style: 3, labelBackgroundColor: "#2E7D32" },
+      },
+      localization: {
+        priceFormatter: (price: number) => formatRevenue(price),
+      },
+      handleScroll: false,
+      handleScale: false,
+    });
+
+    const series: ISeriesApi<"Line"> = chart.addSeries(LineSeries, {
+      color: "#2E7D32",
+      lineWidth: 2,
+      crosshairMarkerBackgroundColor: "#2E7D32",
+      crosshairMarkerBorderColor: "#ffffff",
+      crosshairMarkerBorderWidth: 2,
+      crosshairMarkerRadius: 5,
+      lastValueVisible: true,
+      priceLineVisible: false,
+    });
+
+    series.setData(
+      data.map((d) => ({
+        time: d.date as Time,
+        value: d.revenue / 100, // convert paise to rupees
+      }))
+    );
+
+    // Area fill under line via baseline series would be ideal,
+    // but simple line is cleaner for a dashboard
+    chart.timeScale().fitContent();
+    chartRef.current = chart;
+
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        chart.applyOptions({ width: containerRef.current.clientWidth });
+      }
+    });
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, [data]);
+
+  return <div ref={containerRef} className="w-full" />;
+}
+
+// ---------- Custom CSS Charts ----------
+
+function TopPlantsChart({ data }: { data: TopPlant[] }) {
+  const maxSold = Math.max(...data.map((d) => d.sold), 1);
+
+  return (
+    <div className="space-y-3">
+      {data.map((plant, idx) => (
+        <div key={plant.name} className="group">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-bold text-gray-400 w-5 shrink-0">
+                {idx + 1}
+              </span>
+              <span className="text-sm font-medium text-gray-700 truncate">
+                {plant.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 ml-3">
+              <span className="text-xs text-gray-400">
+                {formatRevenue(plant.revenue)}
+              </span>
+              <span className="text-sm font-bold text-gray-800 tabular-nums w-8 text-right">
+                {plant.sold}
+              </span>
+            </div>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden ml-7">
+            <div
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width: `${(plant.sold / maxSold) * 100}%`,
+                background: `linear-gradient(90deg, #1B5E20 0%, #43A047 100%)`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusDonut({ data }: { data: StatusBreakdown[] }) {
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  // Build conic gradient segments
+  let cumulative = 0;
+  const segments = data.map((d) => {
+    const start = cumulative;
+    const pct = (d.count / total) * 100;
+    cumulative += pct;
+    return { ...d, start, end: cumulative, pct };
+  });
+
+  const conicGradient = segments
+    .map(
+      (s) =>
+        `${STATUS_COLORS[s.status] ?? "#94A3B8"} ${s.start}% ${s.end}%`
+    )
+    .join(", ");
+
+  return (
+    <div className="flex items-center gap-8">
+      {/* Donut */}
+      <div className="relative shrink-0">
+        <div
+          className="w-44 h-44 rounded-full"
+          style={{
+            background: `conic-gradient(${conicGradient})`,
+          }}
+        >
+          <div className="absolute inset-5 rounded-full bg-white flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold text-gray-800">{total}</span>
+            <span className="text-xs text-gray-400">Total</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="space-y-2 flex-1 min-w-0">
+        {segments.map((s, idx) => (
+          <div
+            key={s.status}
+            className={`flex items-center gap-3 px-2 py-1.5 rounded-lg transition-colors cursor-default ${
+              hoveredIdx === idx ? "bg-gray-50" : ""
+            }`}
+            onMouseEnter={() => setHoveredIdx(idx)}
+            onMouseLeave={() => setHoveredIdx(null)}
+          >
+            <div
+              className="w-3 h-3 rounded-sm shrink-0"
+              style={{ backgroundColor: STATUS_COLORS[s.status] ?? "#94A3B8" }}
+            />
+            <span className="text-sm text-gray-600 capitalize truncate flex-1">
+              {s.status}
+            </span>
+            <span className="text-sm font-semibold text-gray-800 tabular-nums">
+              {s.count}
+            </span>
+            <span className="text-xs text-gray-400 tabular-nums w-10 text-right">
+              {s.pct.toFixed(0)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Main Component ----------
 
 export function AnalyticsClient({
   dailyData,
@@ -74,110 +322,28 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-6">
-      {/* Revenue + Orders over time */}
+      {/* Time-series charts */}
       {dailyData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="Daily Orders (Last 30 Days)">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(d: string) => {
-                    const date = new Date(d);
-                    return `${date.getDate()}/${date.getMonth() + 1}`;
-                  }}
-                />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip
-                  labelFormatter={(d: string) => new Date(d).toLocaleDateString("en-IN")}
-                />
-                <Bar dataKey="orders" fill="#1B5E20" radius={[4, 4, 0, 0]} name="Orders" />
-              </BarChart>
-            </ResponsiveContainer>
+          <ChartCard title="Daily Orders" subtitle="Last 30 days">
+            <OrdersChart data={dailyData} />
           </ChartCard>
-
-          <ChartCard title="Daily Revenue (Last 30 Days)">
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(d: string) => {
-                    const date = new Date(d);
-                    return `${date.getDate()}/${date.getMonth() + 1}`;
-                  }}
-                />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={formatRevenue} />
-                <Tooltip
-                  labelFormatter={(d: string) => new Date(d).toLocaleDateString("en-IN")}
-                  formatter={(value: number) => [formatRevenue(value), "Revenue"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#1B5E20"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  name="Revenue"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <ChartCard title="Revenue Trend" subtitle="Last 30 days">
+            <RevenueChart data={dailyData} />
           </ChartCard>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Selling Plants */}
         {topPlants.length > 0 && (
-          <ChartCard title="Top Selling Plants">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topPlants} layout="vertical" margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 11 }}
-                  width={120}
-                />
-                <Tooltip formatter={(value: number) => [value, "Sold"]} />
-                <Bar dataKey="sold" fill="#2E7D32" radius={[0, 4, 4, 0]} name="Units Sold" />
-              </BarChart>
-            </ResponsiveContainer>
+          <ChartCard title="Top Selling Plants" subtitle={`${topPlants.length} plants by units sold`}>
+            <TopPlantsChart data={topPlants} />
           </ChartCard>
         )}
 
-        {/* Order Status Breakdown */}
         {statusBreakdown.length > 0 && (
-          <ChartCard title="Order Status Breakdown">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusBreakdown}
-                  dataKey="count"
-                  nameKey="status"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ status, count }: { status: string; count: number }) =>
-                    `${status} (${count})`
-                  }
-                  labelLine={{ strokeWidth: 1 }}
-                >
-                  {statusBreakdown.map((entry, index) => (
-                    <Cell
-                      key={entry.status}
-                      fill={STATUS_COLORS[entry.status] ?? PIE_COLORS[index % PIE_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+          <ChartCard title="Order Status" subtitle="All-time breakdown">
+            <StatusDonut data={statusBreakdown} />
           </ChartCard>
         )}
       </div>
@@ -187,14 +353,21 @@ export function AnalyticsClient({
 
 function ChartCard({
   title,
+  subtitle,
   children,
 }: {
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="font-semibold text-gray-800 mb-4">{title}</h3>
+    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+      <div className="mb-5">
+        <h3 className="font-semibold text-gray-800">{title}</h3>
+        {subtitle && (
+          <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+        )}
+      </div>
       {children}
     </div>
   );
