@@ -75,7 +75,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="leaf-outline" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
           headerTitle: "Exotic Nursery",
           headerTitleStyle: { fontWeight: "700", fontSize: 20, color: colors.primary },
