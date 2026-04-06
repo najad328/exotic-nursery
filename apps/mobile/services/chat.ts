@@ -1,11 +1,12 @@
 import { supabase } from "./supabase";
-import { GeminiProvider } from "./llm";
+import { GroqProvider } from "./llm";
 import type { ChatMessage, LLMProvider } from "./llm";
 
 // ─── Pluggable LLM Provider ────────────────────────────────
 // Swap this to change the AI backend. Only this line needs to change.
-const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? "";
-const llm: LLMProvider = new GeminiProvider(apiKey);
+// Options: GroqProvider (Llama 3.3, free), GeminiProvider (Gemini Flash)
+const apiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY ?? "";
+const llm: LLMProvider = new GroqProvider(apiKey);
 
 // ─── System Prompt ──────────────────────────────────────────
 const SYSTEM_PROMPT = `You are a friendly and knowledgeable plant care assistant for "Exotic Nursery", a shop specializing in rare and exotic plants.
