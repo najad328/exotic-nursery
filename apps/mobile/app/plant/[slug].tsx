@@ -24,6 +24,7 @@ import { formatPriceINR } from "@exotic-nursery/types";
 import { useCartStore } from "../../stores/cartStore";
 import { WhatsAppButton } from "../../components/WhatsAppButton";
 import { buildPlantInquiryWhatsAppUrl } from "@exotic-nursery/utils";
+import { colors, spacing, radius, shadows } from "../../theme";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -41,7 +42,7 @@ export default function PlantDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1B5E20" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -109,7 +110,7 @@ export default function PlantDetailScreen() {
                   setActiveImageIndex(newIndex);
                 }}
               >
-                <Ionicons name="chevron-back" size={22} color="#fff" />
+                <Ionicons name="chevron-back" size={22} color={colors.white} />
               </Pressable>
             )}
             {allImages.length > 1 && activeImageIndex < allImages.length - 1 && (
@@ -121,7 +122,7 @@ export default function PlantDetailScreen() {
                   setActiveImageIndex(newIndex);
                 }}
               >
-                <Ionicons name="chevron-forward" size={22} color="#fff" />
+                <Ionicons name="chevron-forward" size={22} color={colors.white} />
               </Pressable>
             )}
             {allImages.length > 1 && (
@@ -239,14 +240,14 @@ export default function PlantDetailScreen() {
             <>
               <Text style={styles.sectionTitle}>Care Tips</Text>
               <View style={styles.tipsCard}>
-                <Ionicons name="bulb" size={20} color="#F9A825" />
+                <Ionicons name="bulb" size={20} color={colors.orange} />
                 <Text style={styles.tipsText}>{plant.care_tips}</Text>
               </View>
             </>
           )}
 
           {/* WhatsApp Inquiry */}
-          <View style={{ marginTop: 20 }}>
+          <View style={{ marginTop: spacing.xl }}>
             <WhatsAppButton
               url={buildPlantInquiryWhatsAppUrl(
                 process.env.EXPO_PUBLIC_WHATSAPP_PHONE ?? "9999999999",
@@ -314,7 +315,7 @@ function AddToCartBar({
           style={[styles.addToCartButton, styles.goToCartButton]}
           onPress={() => router.push("/(tabs)/cart")}
         >
-          <Ionicons name="cart" size={22} color="#fff" />
+          <Ionicons name="cart" size={22} color={colors.white} />
           <Text style={styles.addToCartText}>Go to Cart</Text>
         </Pressable>
       ) : (
@@ -327,10 +328,10 @@ function AddToCartBar({
           onPress={handleAdd}
         >
           {adding ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={colors.white} size="small" />
           ) : (
             <>
-              <Ionicons name="cart" size={22} color="#fff" />
+              <Ionicons name="cart" size={22} color={colors.white} />
               <Text style={styles.addToCartText}>
                 {outOfStock ? "Out of Stock" : "Add to Cart"}
               </Text>
@@ -393,7 +394,7 @@ function ShareBar({
       <Text style={styles.shareTitle}>Share this plant</Text>
       <View style={styles.shareRow}>
         <Pressable style={styles.shareBtn} onPress={handleWhatsAppShare}>
-          <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+          <Ionicons name="logo-whatsapp" size={20} color={colors.whatsapp} />
           <Text style={styles.shareBtnText}>WhatsApp</Text>
         </Pressable>
 
@@ -406,15 +407,15 @@ function ShareBar({
           <Ionicons
             name={copied ? "checkmark-circle" : "link"}
             size={20}
-            color={copied ? "#2E7D32" : "#666"}
+            color={copied ? colors.primary : colors.onSurfaceVariant}
           />
-          <Text style={[styles.shareBtnText, copied && { color: "#2E7D32" }]}>
+          <Text style={[styles.shareBtnText, copied && { color: colors.primary }]}>
             {copied ? "Copied!" : "Copy Link"}
           </Text>
         </Pressable>
 
         <Pressable style={styles.shareBtn} onPress={handleNativeShare}>
-          <Ionicons name="share-outline" size={20} color="#666" />
+          <Ionicons name="share-outline" size={20} color={colors.onSurfaceVariant} />
           <Text style={styles.shareBtnText}>More</Text>
         </Pressable>
       </View>
@@ -433,7 +434,7 @@ function CareItem({
 }) {
   return (
     <View style={styles.careItem}>
-      <Ionicons name={icon} size={22} color="#1B5E20" />
+      <Ionicons name={icon} size={22} color={colors.primary} />
       <Text style={styles.careLabel}>{label}</Text>
       <Text style={styles.careValue}>{value}</Text>
     </View>
@@ -447,7 +448,7 @@ function formatEnum(value: string): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
@@ -456,49 +457,49 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#D32F2F",
+    color: colors.error,
   },
   image: {
     width: "100%",
     height: 300,
-    backgroundColor: "#E8F5E9",
+    backgroundColor: colors.primaryContainer,
   },
   imagePlaceholder: {
     justifyContent: "center",
     alignItems: "center",
   },
   shareContainer: {
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
+    borderTopColor: colors.outlineVariant,
   },
   shareTitle: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#888",
-    marginBottom: 10,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   shareRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
   },
   shareBtn: {
     flex: 1,
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingVertical: 10,
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
     paddingHorizontal: 6,
-    backgroundColor: "#F5F5F5",
-    borderRadius: 10,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.md,
   },
   shareBtnText: {
     fontSize: 11,
-    color: "#666",
+    color: colors.onSurfaceVariant,
     fontWeight: "500",
   },
   dotsContainer: {
@@ -507,34 +508,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     position: "absolute",
-    bottom: 12,
+    bottom: spacing.md,
     left: 0,
     right: 0,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: spacing.sm,
+    height: spacing.sm,
+    borderRadius: spacing.xs,
   },
   dotActive: {
-    backgroundColor: "#1B5E20",
-    width: 20,
-    borderRadius: 4,
+    backgroundColor: colors.primary,
+    width: spacing.xl,
+    borderRadius: spacing.xs,
   },
   dotInactive: {
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: `${colors.surface}B3`,
   },
   imageCounter: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: spacing.md,
+    right: spacing.md,
     backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   imageCounterText: {
-    color: "#fff",
+    color: colors.white,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -544,129 +545,127 @@ const styles = StyleSheet.create({
     marginTop: -20,
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
   },
   carouselNavLeft: {
-    left: 10,
+    left: spacing.md,
   },
   carouselNavRight: {
-    right: 10,
+    right: spacing.md,
   },
   placeholderEmoji: {
     fontSize: 80,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
   },
   categoryBadge: {
     fontSize: 13,
-    color: "#1B5E20",
+    color: colors.primary,
     fontWeight: "600",
-    backgroundColor: "#E8F5E9",
+    backgroundColor: colors.primaryContainer,
     alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
   },
   name: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#222",
-    marginTop: 10,
+    color: colors.onBackground,
+    marginTop: spacing.md,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginTop: 8,
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
   price: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1B5E20",
+    color: colors.primary,
   },
   comparePrice: {
     fontSize: 18,
-    color: "#999",
+    color: colors.textTertiary,
     textDecorationLine: "line-through",
   },
   discountBadge: {
-    backgroundColor: "#FFF3E0",
+    backgroundColor: colors.orangeLight,
     borderRadius: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
   discountText: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#E65100",
+    color: colors.orange,
   },
   stock: {
     fontSize: 14,
-    color: "#2E7D32",
+    color: colors.success,
     fontWeight: "500",
     marginTop: 6,
   },
   stockOut: {
-    color: "#D32F2F",
+    color: colors.error,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
-    marginTop: 24,
-    marginBottom: 10,
+    color: colors.onBackground,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.md,
   },
   description: {
     fontSize: 15,
-    color: "#555",
+    color: colors.onSurfaceVariant,
     lineHeight: 22,
   },
   careGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: spacing.md,
   },
   careItem: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     padding: 14,
     width: "47%",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
   careLabel: {
     fontSize: 12,
-    color: "#888",
+    color: colors.textSecondary,
     marginTop: 6,
   },
   careValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
+    color: colors.onBackground,
     marginTop: 2,
     textAlign: "center",
   },
   tipsCard: {
-    backgroundColor: "#FFFDE7",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.tertiaryContainer,
+    borderRadius: radius.md,
+    padding: spacing.lg,
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.md,
     alignItems: "flex-start",
   },
   tipsText: {
     flex: 1,
     fontSize: 14,
-    color: "#555",
+    color: colors.onSurfaceVariant,
     lineHeight: 20,
   },
   bottomBar: {
@@ -674,44 +673,40 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-    backgroundColor: "#fff",
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === "ios" ? 34 : spacing.lg,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#EEE",
+    borderTopColor: colors.outlineVariant,
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    ...shadows.lg,
   },
-  bottomPrice: { marginRight: 4 },
-  bottomPriceLabel: { fontSize: 12, color: "#888" },
-  bottomPriceValue: { fontSize: 20, fontWeight: "bold", color: "#1B5E20" },
+  bottomPrice: { marginRight: spacing.xs },
+  bottomPriceLabel: { fontSize: 12, color: colors.textSecondary },
+  bottomPriceValue: { fontSize: 20, fontWeight: "bold", color: colors.primary },
   addToCartButton: {
     flex: 1,
-    backgroundColor: "#1B5E20",
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
     paddingVertical: 14,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   addToCartDisabled: {
-    backgroundColor: "#999",
+    backgroundColor: colors.textTertiary,
   },
   addToCartAdded: {
-    backgroundColor: "#2E7D32",
+    backgroundColor: colors.success,
   },
   goToCartButton: {
-    backgroundColor: "#E65100",
+    backgroundColor: colors.orange,
   },
   addToCartText: {
-    color: "#fff",
+    color: colors.white,
     fontSize: 16,
     fontWeight: "bold",
   },

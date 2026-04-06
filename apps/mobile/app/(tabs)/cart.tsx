@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { useCartStore } from "../../stores/cartStore";
 import { formatPrice } from "@exotic-nursery/utils";
+import { colors, radius, shadows, spacing } from "../../theme";
 
 export default function CartScreen() {
   const { items, loading, error, fetchCart, updateQuantity, removeItem } =
@@ -28,7 +29,7 @@ export default function CartScreen() {
   if (loading && items.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1B5E20" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -36,13 +37,18 @@ export default function CartScreen() {
   if (items.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyIcon}>🛒</Text>
+        <View style={styles.emptyIconContainer}>
+          <Text style={styles.emptyIcon}>🌿</Text>
+        </View>
         <Text style={styles.emptyTitle}>Your cart is empty</Text>
         <Text style={styles.emptySubtitle}>
           Browse our exotic plant collection and add some beauties!
         </Text>
         <Pressable
-          style={styles.browseButton}
+          style={({ pressed }) => [
+            styles.browseButton,
+            pressed && { opacity: 0.85 },
+          ]}
           onPress={() => router.push("/(tabs)/search")}
         >
           <Text style={styles.browseButtonText}>Browse Plants</Text>
@@ -98,6 +104,7 @@ export default function CartScreen() {
               <Pressable
                 onPress={() => removeItem(item.id)}
                 style={styles.removeButton}
+                hitSlop={8}
               >
                 <Text style={styles.removeText}>✕</Text>
               </Pressable>
@@ -109,7 +116,10 @@ export default function CartScreen() {
               </Text>
               <View style={styles.quantityControls}>
                 <Pressable
-                  style={styles.qtyButton}
+                  style={({ pressed }) => [
+                    styles.qtyButton,
+                    pressed && { opacity: 0.7 },
+                  ]}
                   onPress={() =>
                     item.quantity <= 1
                       ? removeItem(item.id)
@@ -120,10 +130,14 @@ export default function CartScreen() {
                 </Pressable>
                 <Text style={styles.qtyValue}>{item.quantity}</Text>
                 <Pressable
-                  style={[
+                  style={({ pressed }) => [
                     styles.qtyButton,
                     item.quantity >= item.plant.stock_quantity &&
                       styles.qtyButtonDisabled,
+                    pressed &&
+                      item.quantity < item.plant.stock_quantity && {
+                        opacity: 0.7,
+                      },
                   ]}
                   disabled={item.quantity >= item.plant.stock_quantity}
                   onPress={() => updateQuantity(item.id, item.quantity + 1)}
@@ -147,7 +161,7 @@ export default function CartScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.checkoutButton,
-            pressed && { opacity: 0.8 },
+            pressed && { opacity: 0.85 },
           ]}
           onPress={() => router.push("/checkout")}
         >
@@ -159,122 +173,195 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
+  /* Layout */
+  container: { flex: 1, backgroundColor: colors.background },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
-    backgroundColor: "#F5F5F5",
+    padding: spacing.xxl,
+    backgroundColor: colors.background,
   },
-  emptyIcon: { fontSize: 64, marginBottom: 12 },
-  emptyTitle: { fontSize: 20, fontWeight: "bold", color: "#333" },
+
+  /* Empty state */
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceContainer,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  emptyIcon: { fontSize: 40 },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: colors.onBackground,
+    marginTop: spacing.sm,
+  },
   emptySubtitle: {
     fontSize: 14,
-    color: "#888",
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: 8,
+    marginTop: spacing.sm,
     lineHeight: 20,
+    paddingHorizontal: spacing.xxxl,
   },
   browseButton: {
-    backgroundColor: "#1B5E20",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginTop: 20,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    marginTop: spacing.xl,
   },
-  browseButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  browseButtonText: {
+    color: colors.white,
+    fontWeight: "600",
+    fontSize: 16,
+  },
+
+  /* Error */
   errorBanner: {
-    backgroundColor: "#FFEBEE",
-    padding: 12,
+    backgroundColor: colors.errorContainer,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#EF9A9A",
+    borderBottomColor: colors.outlineVariant,
   },
-  errorText: { color: "#C62828", fontSize: 13, textAlign: "center" },
-  list: { padding: 16, paddingBottom: 180 },
+  errorText: {
+    color: colors.error,
+    fontSize: 13,
+    textAlign: "center",
+  },
+
+  /* List */
+  list: { padding: spacing.lg, paddingBottom: 180 },
+
+  /* Card */
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
   cardRow: { flexDirection: "row", alignItems: "flex-start" },
-  image: { width: 70, height: 70, borderRadius: 10 },
+
+  /* Thumbnail */
+  image: { width: 72, height: 72, borderRadius: radius.md },
   imagePlaceholder: {
-    backgroundColor: "#E8F5E9",
+    backgroundColor: colors.surfaceContainer,
     justifyContent: "center",
     alignItems: "center",
   },
   placeholderEmoji: { fontSize: 28 },
-  info: { flex: 1, marginLeft: 12 },
-  plantName: { fontSize: 15, fontWeight: "600", color: "#333" },
-  price: { fontSize: 14, color: "#1B5E20", fontWeight: "600", marginTop: 4 },
-  unavailable: { fontSize: 12, color: "#C62828", marginTop: 2 },
-  lowStock: { fontSize: 12, color: "#E65100", marginTop: 2 },
-  removeButton: { padding: 6 },
-  removeText: { fontSize: 16, color: "#999" },
+
+  /* Item info */
+  info: { flex: 1, marginLeft: spacing.md },
+  plantName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.onBackground,
+  },
+  price: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: "600",
+    marginTop: spacing.xs,
+  },
+  unavailable: {
+    fontSize: 12,
+    color: colors.error,
+    marginTop: 2,
+  },
+  lowStock: {
+    fontSize: 12,
+    color: colors.tertiary,
+    marginTop: 2,
+  },
+
+  /* Remove */
+  removeButton: { padding: spacing.sm },
+  removeText: { fontSize: 15, color: colors.textTertiary },
+
+  /* Quantity row */
   quantityRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
+    borderTopColor: colors.outlineVariant,
   },
-  itemTotal: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  itemTotal: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.onBackground,
+  },
   quantityControls: { flexDirection: "row", alignItems: "center" },
   qtyButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    backgroundColor: "#E8F5E9",
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceContainer,
     justifyContent: "center",
     alignItems: "center",
   },
-  qtyButtonDisabled: { opacity: 0.4 },
-  qtyButtonText: { fontSize: 18, fontWeight: "bold", color: "#1B5E20" },
+  qtyButtonDisabled: { opacity: 0.35 },
+  qtyButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.primary,
+  },
   qtyValue: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginHorizontal: 16,
-    color: "#333",
+    fontWeight: "600",
+    marginHorizontal: spacing.lg,
+    color: colors.onBackground,
     minWidth: 20,
     textAlign: "center",
   },
+
+  /* Footer */
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
-    padding: 16,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    borderTopColor: colors.outlineVariant,
+    paddingBottom: Platform.OS === "ios" ? 34 : spacing.lg,
+    ...shadows.md,
   },
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: spacing.md,
   },
-  footerLabel: { fontSize: 15, color: "#666" },
-  footerValue: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  footerLabel: {
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  footerValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.onBackground,
+  },
   checkoutButton: {
-    backgroundColor: "#1B5E20",
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingVertical: spacing.lg,
     alignItems: "center",
   },
-  checkoutText: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  checkoutText: {
+    color: colors.white,
+    fontSize: 17,
+    fontWeight: "600",
+  },
 });

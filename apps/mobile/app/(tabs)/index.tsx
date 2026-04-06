@@ -8,10 +8,12 @@ import {
   Image,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { getCategories, getFeaturedPlants } from "../../services/plants";
 import { formatPriceINR } from "@exotic-nursery/types";
+import { colors, radius, shadows, spacing } from "../../theme";
 
 export default function HomeScreen() {
   const {
@@ -33,19 +35,31 @@ export default function HomeScreen() {
   if (categoriesLoading || plantsLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1B5E20" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Search Bar */}
+      <TouchableOpacity
+        style={styles.searchBar}
+        onPress={() => router.push("/(tabs)/search")}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="search" size={20} color={colors.textTertiary} />
+        <Text style={styles.searchPlaceholder}>Search for exotic plants...</Text>
+      </TouchableOpacity>
+
       {/* Hero Banner */}
       <View style={styles.hero}>
-        <Text style={styles.heroTitle}>Discover Exotic Plants</Text>
-        <Text style={styles.heroSubtitle}>
-          Rare, beautiful, and delivered to your door
-        </Text>
+        <View style={styles.heroContent}>
+          <Text style={styles.heroTitle}>Discover{"\n"}Exotic Plants</Text>
+          <Text style={styles.heroSubtitle}>
+            Rare, beautiful, and delivered to your door
+          </Text>
+        </View>
       </View>
 
       {/* Categories */}
@@ -63,6 +77,7 @@ export default function HomeScreen() {
               onPress={() =>
                 router.push(`/(tabs)/search?category=${item.slug}`)
               }
+              activeOpacity={0.7}
             >
               <View style={styles.categoryIcon}>
                 <Text style={styles.categoryEmoji}>
@@ -81,8 +96,11 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Featured Plants</Text>
-          <TouchableOpacity onPress={() => router.push("/(tabs)/search")}>
-            <Text style={styles.seeAll}>See All</Text>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/search")}
+            hitSlop={8}
+          >
+            <Text style={styles.seeAll}>See All →</Text>
           </TouchableOpacity>
         </View>
         <FlatList
@@ -95,16 +113,17 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.plantCard}
               onPress={() => router.push(`/plant/${item.slug}`)}
+              activeOpacity={0.8}
             >
               {(item.image_url || (item.images && item.images.length > 0)) ? (
                 <Image
                   source={{ uri: item.image_url || item.images?.[0] }}
                   style={styles.plantImage}
-                  resizeMode="contain"
+                  resizeMode="cover"
                 />
               ) : (
                 <View style={[styles.plantImage, styles.plantImagePlaceholder]}>
-                  <Text style={styles.plantImagePlaceholderText}>🌱</Text>
+                  <Text style={styles.plantImagePlaceholderText}>🌿</Text>
                 </View>
               )}
               <View style={styles.plantInfo}>
@@ -133,7 +152,7 @@ export default function HomeScreen() {
         />
       </View>
 
-      <View style={{ height: 24 }} />
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
@@ -153,34 +172,56 @@ function getCategoryEmoji(slug: string): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surfaceContainer,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    gap: spacing.sm,
+  },
+  searchPlaceholder: {
+    fontSize: 15,
+    color: colors.textTertiary,
   },
   hero: {
-    backgroundColor: "#1B5E20",
-    padding: 24,
-    paddingTop: 16,
-    paddingBottom: 32,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    backgroundColor: colors.primaryContainer,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    padding: spacing.xxl,
+  },
+  heroContent: {
+    gap: spacing.sm,
   },
   heroTitle: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#fff",
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.primaryDark,
+    letterSpacing: -0.5,
+    lineHeight: 34,
   },
   heroSubtitle: {
-    fontSize: 15,
-    color: "#A5D6A7",
-    marginTop: 4,
+    fontSize: 14,
+    color: colors.primary,
+    lineHeight: 20,
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+    marginTop: spacing.xxl,
+    paddingHorizontal: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -188,108 +229,106 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.onBackground,
+    marginBottom: spacing.md,
   },
   seeAll: {
-    fontSize: 14,
-    color: "#1B5E20",
+    fontSize: 13,
+    color: colors.primary,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   categoryList: {
-    gap: 12,
+    gap: spacing.lg,
   },
   categoryCard: {
     alignItems: "center",
-    width: 80,
+    width: 76,
   },
   categoryIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#E8F5E9",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.surfaceContainer,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: spacing.xs,
   },
   categoryEmoji: {
-    fontSize: 28,
+    fontSize: 26,
   },
   categoryName: {
-    fontSize: 12,
-    color: "#555",
+    fontSize: 11,
+    color: colors.onSurfaceVariant,
     textAlign: "center",
     fontWeight: "500",
   },
   plantList: {
-    gap: 14,
+    gap: spacing.md,
   },
   plantCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     width: 180,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
     overflow: "hidden",
+    ...shadows.sm,
   },
   plantImage: {
     width: "100%",
-    height: 140,
-    backgroundColor: "#E8F5E9",
+    height: 150,
+    backgroundColor: colors.surfaceContainer,
   },
   plantImagePlaceholder: {
     justifyContent: "center",
     alignItems: "center",
   },
   plantImagePlaceholderText: {
-    fontSize: 48,
+    fontSize: 40,
   },
   plantInfo: {
-    padding: 12,
+    padding: spacing.md,
   },
   plantName: {
     fontSize: 15,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "600",
+    color: colors.onBackground,
   },
   plantCategory: {
     fontSize: 12,
-    color: "#888",
+    color: colors.textSecondary,
     marginTop: 2,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 6,
+    marginTop: spacing.sm,
   },
   plantPrice: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#1B5E20",
+    fontWeight: "700",
+    color: colors.primary,
   },
   comparePrice: {
-    fontSize: 13,
-    color: "#999",
+    fontSize: 12,
+    color: colors.textTertiary,
     textDecorationLine: "line-through",
   },
   badge: {
-    backgroundColor: "#E8F5E9",
-    borderRadius: 6,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.sm,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: "flex-start",
-    marginTop: 6,
+    marginTop: spacing.sm,
   },
   badgeText: {
     fontSize: 11,
-    color: "#2E7D32",
+    color: colors.primary,
     fontWeight: "600",
     textTransform: "capitalize",
   },

@@ -9,22 +9,15 @@ import {
   KeyboardAvoidingView,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { signIn } from "../../services/auth";
-
-function showAlert(title: string, message: string) {
-  if (Platform.OS === "web") {
-    window.alert(`${title}: ${message}`);
-  } else {
-    // Dynamic import to avoid web issues
-    const { Alert } = require("react-native");
-    Alert.alert(title, message);
-  }
-}
+import { colors, radius, shadows, spacing } from "../../theme";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,47 +51,71 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Botanical Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>🌿</Text>
+          <View style={styles.logoCircle}>
+            <Ionicons name="leaf" size={36} color={colors.primary} />
+          </View>
           <Text style={styles.title}>Exotic Nursery</Text>
           <Text style={styles.subtitle}>
             Discover rare and beautiful plants
           </Text>
         </View>
 
+        {/* Form Card */}
         <View style={styles.form}>
           {error && (
             <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={16} color={colors.error} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="you@example.com"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={18} color={colors.textTertiary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="you@example.com"
+                placeholderTextColor={colors.textTertiary}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+              />
+            </View>
+          </View>
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={18} color={colors.textTertiary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Your password"
+                placeholderTextColor={colors.textTertiary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+              />
+              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={colors.textTertiary}
+                />
+              </Pressable>
+            </View>
+          </View>
 
           <Pressable
             style={({ pressed }) => [
               styles.button,
               loading && styles.buttonDisabled,
-              pressed && { opacity: 0.8 },
+              pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
             ]}
             onPress={handleLogin}
             disabled={loading}
@@ -112,7 +129,7 @@ export default function LoginScreen() {
             <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <Link href="/(auth)/register" asChild>
               <Pressable>
-                <Text style={styles.link}>Sign Up</Text>
+                <Text style={styles.link}>Register</Text>
               </Pressable>
             </Link>
           </View>
@@ -125,97 +142,118 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 24,
+    padding: spacing.xxl,
   },
   header: {
     alignItems: "center",
     marginBottom: 40,
   },
-  logo: {
-    fontSize: 64,
-    marginBottom: 8,
+  logoCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.primaryContainer,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1B5E20",
+    fontSize: 26,
+    fontWeight: "700",
+    color: colors.primary,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 4,
+    fontSize: 15,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   form: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xxl,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.md,
+  },
+  inputGroup: {
+    marginBottom: spacing.lg,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
-    marginTop: 12,
+    color: colors.onSurfaceVariant,
+    marginBottom: spacing.sm,
+    letterSpacing: 0.3,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+  },
+  inputIcon: {
+    paddingLeft: spacing.md,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
+    flex: 1,
     padding: 14,
     fontSize: 16,
-    backgroundColor: "#FAFAFA",
+    color: colors.onBackground,
+  },
+  eyeIcon: {
+    paddingRight: spacing.md,
+    padding: spacing.sm,
   },
   errorBox: {
-    backgroundColor: "#FFEBEE",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#EF9A9A",
+    backgroundColor: colors.errorContainer,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   errorText: {
-    color: "#C62828",
+    color: colors.error,
     fontSize: 14,
-    textAlign: "center",
+    flex: 1,
   },
   button: {
-    backgroundColor: "#1B5E20",
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
     padding: 16,
     alignItems: "center",
-    marginTop: 24,
-    cursor: "pointer" as unknown as undefined,
+    marginTop: spacing.xxl,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: spacing.xl,
   },
   footerText: {
-    color: "#666",
+    color: colors.textSecondary,
     fontSize: 14,
   },
   link: {
-    color: "#1B5E20",
+    color: colors.primary,
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
 });

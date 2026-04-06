@@ -10,12 +10,14 @@ import {
   Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { getOrderById } from "../../services/orders";
 import { supabase } from "../../services/supabase";
 import { formatPrice, buildOrderStatusWhatsAppUrl } from "@exotic-nursery/utils";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_FLOW } from "@exotic-nursery/types";
 import type { OrderWithItems, OrderStatus, ShipmentEvent } from "@exotic-nursery/types";
 import { WhatsAppButton } from "../../components/WhatsAppButton";
+import { colors, spacing, radius, shadows } from "../../theme";
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -114,7 +116,7 @@ export default function OrderDetailScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1B5E20" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -135,7 +137,12 @@ export default function OrderDetailScreen() {
       {/* Success Banner (for new orders) */}
       {order.status === "pending" && (
         <View style={styles.successBanner}>
-          <Text style={styles.successIcon}>✅</Text>
+          <Ionicons
+            name="checkmark-circle"
+            size={40}
+            color={colors.primary}
+            style={{ marginBottom: spacing.sm }}
+          />
           <Text style={styles.successTitle}>Order Placed Successfully!</Text>
           <Text style={styles.successSubtitle}>
             Your order has been received and is being processed.
@@ -221,7 +228,10 @@ export default function OrderDetailScreen() {
       {/* Courier Tracking Card */}
       {order.awb_code && (
         <View style={[styles.section, styles.courierCard]}>
-          <Text style={styles.sectionTitle}>🚚 Shipment Tracking</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Ionicons name="car" size={20} color={colors.primary} />
+            <Text style={styles.sectionTitle}>Shipment Tracking</Text>
+          </View>
 
           <View style={styles.courierGrid}>
             <View style={styles.courierItem}>
@@ -258,7 +268,10 @@ export default function OrderDetailScreen() {
                 }
               }}
             >
-              <Text style={styles.trackButtonText}>🔗 Track Shipment</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                <Ionicons name="open-outline" size={16} color={colors.primary} />
+                <Text style={styles.trackButtonText}>Track Shipment</Text>
+              </View>
             </Pressable>
           )}
 
@@ -358,7 +371,7 @@ export default function OrderDetailScreen() {
       />
 
       <Pressable
-        style={[styles.backButton, { marginTop: 12 }]}
+        style={[styles.backButton, { marginTop: spacing.md }]}
         onPress={() => router.push("/(tabs)/orders")}
       >
         <Text style={styles.backButtonText}>View All Orders</Text>
@@ -379,171 +392,187 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
-  scroll: { padding: 16 },
+  container: { flex: 1, backgroundColor: colors.background },
+  scroll: { padding: spacing.lg },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  errorText: { color: "#C62828", fontSize: 15 },
+  errorText: { color: colors.badge, fontSize: 15 },
   successBanner: {
-    backgroundColor: "#E8F5E9",
-    borderRadius: 14,
-    padding: 20,
+    backgroundColor: colors.primaryContainer,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: "#C8E6C9",
+    borderColor: colors.outline,
   },
-  successIcon: { fontSize: 40, marginBottom: 8 },
-  successTitle: { fontSize: 18, fontWeight: "bold", color: "#1B5E20" },
-  successSubtitle: { fontSize: 14, color: "#388E3C", marginTop: 4, textAlign: "center" },
+  successTitle: { fontSize: 18, fontWeight: "bold", color: colors.primary },
+  successSubtitle: { fontSize: 14, color: colors.primary, marginTop: spacing.xs, textAlign: "center" },
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  sectionTitle: { fontSize: 17, fontWeight: "bold", color: "#333" },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  sectionTitle: { fontSize: 17, fontWeight: "bold", color: colors.onBackground },
   statusBadge: {
-    backgroundColor: "#E8F5E9",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    backgroundColor: colors.primaryContainer,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
-  statusCancelled: { backgroundColor: "#FFEBEE" },
-  statusText: { fontSize: 12, fontWeight: "600", color: "#1B5E20" },
-  statusCancelledText: { color: "#C62828" },
-  infoRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
-  infoLabel: { fontSize: 14, color: "#888" },
-  infoValue: { fontSize: 14, color: "#333", fontWeight: "500" },
+  statusCancelled: { backgroundColor: colors.errorContainer },
+  statusText: { fontSize: 12, fontWeight: "600", color: colors.primary },
+  statusCancelledText: { color: colors.badge },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm - 2,
+  },
+  infoLabel: { fontSize: 14, color: colors.textTertiary },
+  infoValue: { fontSize: 14, color: colors.onBackground, fontWeight: "500" },
   trackerStep: { flexDirection: "row", alignItems: "flex-start", minHeight: 44 },
-  trackerLine: { alignItems: "center", width: 24, marginRight: 12 },
+  trackerLine: { alignItems: "center", width: spacing.xxl, marginRight: spacing.md },
   trackerDot: {
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: colors.outlineVariant,
     borderWidth: 2,
-    borderColor: "#E0E0E0",
+    borderColor: colors.outlineVariant,
   },
-  trackerDotCompleted: { backgroundColor: "#1B5E20", borderColor: "#1B5E20" },
-  trackerDotCurrent: { backgroundColor: "#fff", borderColor: "#1B5E20", borderWidth: 3 },
+  trackerDotCompleted: { backgroundColor: colors.primary, borderColor: colors.primary },
+  trackerDotCurrent: { backgroundColor: colors.surface, borderColor: colors.primary, borderWidth: 3 },
   trackerConnector: {
     width: 2,
     flex: 1,
-    backgroundColor: "#E0E0E0",
-    minHeight: 24,
+    backgroundColor: colors.outlineVariant,
+    minHeight: spacing.xxl,
   },
-  trackerConnectorCompleted: { backgroundColor: "#1B5E20" },
-  trackerLabel: { fontSize: 14, color: "#AAA", paddingTop: 0 },
-  trackerLabelCompleted: { color: "#1B5E20" },
-  trackerLabelCurrent: { color: "#1B5E20", fontWeight: "bold" },
+  trackerConnectorCompleted: { backgroundColor: colors.primary },
+  trackerLabel: { fontSize: 14, color: colors.textTertiary, paddingTop: 0 },
+  trackerLabelCompleted: { color: colors.primary },
+  trackerLabelCurrent: { color: colors.primary, fontWeight: "bold" },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
   itemInfo: { flex: 1 },
-  itemName: { fontSize: 14, color: "#333", fontWeight: "500" },
-  itemQty: { fontSize: 12, color: "#888", marginTop: 2 },
-  itemPrice: { fontSize: 14, fontWeight: "600", color: "#333" },
-  divider: { height: 1, backgroundColor: "#F0F0F0", marginVertical: 10 },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
-  totalLabel: { fontSize: 14, color: "#666" },
-  totalValue: { fontSize: 14, color: "#333" },
-  freeText: { fontSize: 14, color: "#1B5E20", fontWeight: "600" },
-  grandTotal: { borderTopWidth: 1, borderTopColor: "#E0E0E0", marginTop: 8, paddingTop: 10 },
-  grandTotalLabel: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  grandTotalValue: { fontSize: 18, fontWeight: "bold", color: "#1B5E20" },
-  addressText: { fontSize: 14, color: "#555", lineHeight: 22 },
-  notesText: { fontSize: 13, color: "#888", marginTop: 8, fontStyle: "italic" },
+  itemName: { fontSize: 14, color: colors.onBackground, fontWeight: "500" },
+  itemQty: { fontSize: 12, color: colors.textTertiary, marginTop: 2 },
+  itemPrice: { fontSize: 14, fontWeight: "600", color: colors.onBackground },
+  divider: { height: 1, backgroundColor: colors.outlineVariant, marginVertical: spacing.md - 2 },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  totalLabel: { fontSize: 14, color: colors.textSecondary },
+  totalValue: { fontSize: 14, color: colors.onBackground },
+  freeText: { fontSize: 14, color: colors.primary, fontWeight: "600" },
+  grandTotal: {
+    borderTopWidth: 1,
+    borderTopColor: colors.outlineVariant,
+    marginTop: spacing.sm,
+    paddingTop: spacing.md - 2,
+  },
+  grandTotalLabel: { fontSize: 16, fontWeight: "bold", color: colors.onBackground },
+  grandTotalValue: { fontSize: 18, fontWeight: "bold", color: colors.primary },
+  addressText: { fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 22 },
+  notesText: { fontSize: 13, color: colors.textTertiary, marginTop: spacing.sm, fontStyle: "italic" },
   backButton: {
-    backgroundColor: "#1B5E20",
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
     paddingVertical: 14,
     alignItems: "center",
   },
-  backButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  backButtonText: { color: colors.white, fontSize: 16, fontWeight: "bold" },
   // Courier tracking styles
   courierCard: {
-    borderColor: "#CE93D8",
+    borderColor: colors.outlineVariant,
     borderWidth: 1,
   },
   courierGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 12,
+    gap: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   courierItem: {
     minWidth: "45%" as unknown as number,
   },
   courierLabel: {
     fontSize: 11,
-    color: "#888",
+    color: colors.textTertiary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   courierValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
+    color: colors.onBackground,
     marginTop: 2,
   },
   courierAwb: {
     fontFamily: "monospace",
-    color: "#7B1FA2",
+    color: colors.primary,
   },
   trackButton: {
-    backgroundColor: "#F3E5F5",
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: colors.primaryContainer,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   trackButtonText: {
-    color: "#7B1FA2",
+    color: colors.primary,
     fontSize: 14,
     fontWeight: "600",
   },
   eventsContainer: {
     borderTopWidth: 1,
-    borderTopColor: "#EEE",
-    paddingTop: 12,
+    borderTopColor: colors.outlineVariant,
+    paddingTop: spacing.md,
   },
   eventsTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#555",
-    marginBottom: 10,
+    color: colors.onSurfaceVariant,
+    marginBottom: spacing.md - 2,
   },
   eventRow: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   eventDotCol: {
     alignItems: "center",
-    width: 20,
-    marginRight: 10,
+    width: spacing.xl,
+    marginRight: spacing.md - 2,
   },
   eventDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#DDD",
+    backgroundColor: colors.outlineVariant,
   },
   eventDotActive: {
-    backgroundColor: "#7B1FA2",
+    backgroundColor: colors.primary,
   },
   eventLine: {
     width: 2,
     flex: 1,
-    backgroundColor: "#EEE",
+    backgroundColor: colors.outlineVariant,
     marginTop: 2,
   },
   eventContent: {
@@ -553,11 +582,11 @@ const styles = StyleSheet.create({
   eventDesc: {
     fontSize: 13,
     fontWeight: "500",
-    color: "#333",
+    color: colors.onBackground,
   },
   eventMeta: {
     fontSize: 11,
-    color: "#999",
+    color: colors.textTertiary,
     marginTop: 2,
   },
 });

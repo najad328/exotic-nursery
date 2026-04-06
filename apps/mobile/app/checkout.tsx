@@ -16,6 +16,7 @@ import { useAuthStore } from "../stores/authStore";
 import { placeOrder } from "../services/orders";
 import { supabase } from "../services/supabase";
 import { formatPrice } from "@exotic-nursery/utils";
+import { colors, radius, shadows, spacing } from "../theme";
 import type { PaymentMethod } from "@exotic-nursery/types";
 
 export default function CheckoutScreen() {
@@ -213,7 +214,7 @@ export default function CheckoutScreen() {
                 value={form.delivery_pincode}
                 onChangeText={(v) => updateField("delivery_pincode", v)}
                 placeholder="Enter 6-digit pincode"
-                placeholderTextColor="#AAA"
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="number-pad"
                 maxLength={6}
               />
@@ -226,7 +227,7 @@ export default function CheckoutScreen() {
                 disabled={pincodeStatus === "checking"}
               >
                 {pincodeStatus === "checking" ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.white} />
                 ) : (
                   <Text style={styles.checkButtonText}>Check</Text>
                 )}
@@ -234,7 +235,7 @@ export default function CheckoutScreen() {
             </View>
             {pincodeStatus === "available" && (
               <View style={styles.pincodeSuccess}>
-                <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                 <Text style={styles.pincodeSuccessText}>
                   Delivery available! Estimated {deliveryDays} day{deliveryDays !== 1 ? "s" : ""}
                 </Text>
@@ -242,7 +243,7 @@ export default function CheckoutScreen() {
             )}
             {pincodeStatus === "unavailable" && (
               <View style={styles.pincodeError}>
-                <Ionicons name="close-circle" size={16} color="#C62828" />
+                <Ionicons name="close-circle" size={16} color={colors.badge} />
                 <Text style={styles.pincodeErrorText}>
                   Sorry, we don't deliver to this pincode yet
                 </Text>
@@ -324,7 +325,7 @@ export default function CheckoutScreen() {
           disabled={placing || items.length === 0}
         >
           {placing ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.placeOrderText}>Place Order (COD)</Text>
           )}
@@ -359,7 +360,7 @@ function Field({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#AAA"
+        placeholderTextColor={colors.textTertiary}
         keyboardType={keyboardType}
         maxLength={maxLength}
         multiline={multiline}
@@ -370,152 +371,146 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
-  scroll: { padding: 16 },
+  container: { flex: 1, backgroundColor: colors.background },
+  scroll: { padding: spacing.lg },
   errorBox: {
-    backgroundColor: "#FFEBEE",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
+    backgroundColor: colors.errorContainer,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#EF9A9A",
+    borderColor: colors.error,
   },
-  errorText: { color: "#C62828", fontSize: 14, textAlign: "center" },
+  errorText: { color: colors.badge, fontSize: 14, textAlign: "center" },
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 14,
+    color: colors.onBackground,
+    marginBottom: spacing.lg - 2,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    paddingVertical: spacing.xs + 2,
   },
-  summaryName: { fontSize: 14, color: "#555", flex: 1, marginRight: 8 },
-  summaryPrice: { fontSize: 14, color: "#333", fontWeight: "500" },
+  summaryName: { fontSize: 14, color: colors.onSurfaceVariant, flex: 1, marginRight: spacing.sm },
+  summaryPrice: { fontSize: 14, color: colors.onBackground, fontWeight: "500" },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    marginTop: 8,
-    paddingTop: 10,
+    borderTopColor: colors.outlineVariant,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm + 2,
   },
-  totalLabel: { fontSize: 14, color: "#555" },
-  totalValue: { fontSize: 14, fontWeight: "600", color: "#333" },
-  freeDelivery: { fontSize: 14, color: "#1B5E20", fontWeight: "600" },
+  totalLabel: { fontSize: 14, color: colors.onSurfaceVariant },
+  totalValue: { fontSize: 14, fontWeight: "600", color: colors.onBackground },
+  freeDelivery: { fontSize: 14, color: colors.primary, fontWeight: "600" },
   grandTotalRow: {
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    marginTop: 8,
-    paddingTop: 10,
+    borderTopColor: colors.outlineVariant,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm + 2,
   },
-  grandTotalLabel: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  grandTotalValue: { fontSize: 18, fontWeight: "bold", color: "#1B5E20" },
-  fieldContainer: { marginBottom: 14 },
-  fieldLabel: { fontSize: 13, fontWeight: "600", color: "#555", marginBottom: 6 },
+  grandTotalLabel: { fontSize: 16, fontWeight: "bold", color: colors.onBackground },
+  grandTotalValue: { fontSize: 18, fontWeight: "bold", color: colors.primary },
+  fieldContainer: { marginBottom: spacing.lg - 2 },
+  fieldLabel: { fontSize: 13, fontWeight: "600", color: colors.onSurfaceVariant, marginBottom: spacing.xs + 2 },
   input: {
     borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
-    padding: 12,
+    borderColor: colors.outlineVariant,
+    borderRadius: radius.md,
+    padding: spacing.md,
     fontSize: 15,
-    backgroundColor: "#FAFAFA",
-    color: "#333",
+    backgroundColor: colors.surfaceContainer,
+    color: colors.onBackground,
   },
   inputMultiline: { minHeight: 70, textAlignVertical: "top" },
-  row: { flexDirection: "row", gap: 12 },
+  row: { flexDirection: "row", gap: spacing.md },
   halfField: { flex: 1 },
-  pincodeRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+  pincodeRow: { flexDirection: "row", gap: spacing.sm + 2, alignItems: "center" },
   pincodeInput: { flex: 1 },
   checkButton: {
-    backgroundColor: "#1B5E20",
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     justifyContent: "center",
     alignItems: "center",
   },
-  checkButtonText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  checkButtonText: { color: colors.white, fontSize: 14, fontWeight: "bold" },
   pincodeSuccess: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 6,
+    gap: spacing.xs + 2,
+    marginTop: spacing.xs + 2,
   },
-  pincodeSuccessText: { color: "#2E7D32", fontSize: 13, fontWeight: "500" },
+  pincodeSuccessText: { color: colors.success, fontSize: 13, fontWeight: "500" },
   pincodeError: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 6,
+    gap: spacing.xs + 2,
+    marginTop: spacing.xs + 2,
   },
-  pincodeErrorText: { color: "#C62828", fontSize: 13, fontWeight: "500" },
+  pincodeErrorText: { color: colors.badge, fontSize: 13, fontWeight: "500" },
   paymentOption: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
-    borderRadius: 12,
+    padding: spacing.lg - 2,
+    borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: "#E0E0E0",
-    marginBottom: 10,
+    borderColor: colors.outlineVariant,
+    marginBottom: spacing.sm + 2,
   },
-  paymentSelected: { borderColor: "#1B5E20", backgroundColor: "#E8F5E9" },
+  paymentSelected: { borderColor: colors.primary, backgroundColor: colors.primaryContainer },
   paymentDisabled: { opacity: 0.5 },
-  paymentIcon: { fontSize: 24, marginRight: 12 },
+  paymentIcon: { fontSize: 24, marginRight: spacing.md },
   paymentInfo: { flex: 1 },
-  paymentLabel: { fontSize: 15, fontWeight: "600", color: "#333" },
-  paymentDesc: { fontSize: 12, color: "#888", marginTop: 2 },
+  paymentLabel: { fontSize: 15, fontWeight: "600", color: colors.onBackground },
+  paymentDesc: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: "#CCC",
+    borderColor: colors.outline,
   },
   radioSelected: {
-    borderColor: "#1B5E20",
-    backgroundColor: "#1B5E20",
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
-    padding: 16,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    borderTopColor: colors.outlineVariant,
+    paddingBottom: Platform.OS === "ios" ? 34 : spacing.lg,
+    ...shadows.lg,
   },
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  footerLabel: { fontSize: 15, color: "#666" },
-  footerValue: { fontSize: 18, fontWeight: "bold", color: "#1B5E20" },
+  footerLabel: { fontSize: 15, color: colors.onSurfaceVariant },
+  footerValue: { fontSize: 18, fontWeight: "bold", color: colors.primary },
   placeOrderButton: {
-    backgroundColor: "#1B5E20",
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingVertical: spacing.lg,
     alignItems: "center",
   },
   buttonDisabled: { opacity: 0.5 },
-  placeOrderText: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  placeOrderText: { color: colors.white, fontSize: 17, fontWeight: "bold" },
 });

@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, StyleSheet } from "react-native";
 import { useCartStore } from "../../stores/cartStore";
+import { colors } from "../../theme";
 
 type TabIconProps = {
   color: string;
@@ -12,7 +13,7 @@ function CartIcon({ color, size }: TabIconProps) {
   const totalItems = useCartStore((s) => s.totalItems());
   return (
     <View>
-      <Ionicons name="cart" size={size} color={color} />
+      <Ionicons name="cart-outline" size={size} color={color} />
       {totalItems > 0 && (
         <View style={badgeStyles.badge}>
           <Text style={badgeStyles.badgeText}>
@@ -29,7 +30,7 @@ const badgeStyles = StyleSheet.create({
     position: "absolute",
     top: -4,
     right: -8,
-    backgroundColor: "#C62828",
+    backgroundColor: colors.badge,
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -44,22 +45,29 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#1B5E20",
-        tabBarInactiveTintColor: "#999",
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: "#fff",
-          borderTopColor: "#E0E0E0",
+          backgroundColor: colors.surface,
+          borderTopColor: colors.outlineVariant,
+          borderTopWidth: 0.5,
           height: 60,
           paddingBottom: 8,
           paddingTop: 4,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: "600",
+          letterSpacing: 0.2,
         },
-        headerStyle: { backgroundColor: "#1B5E20" },
-        headerTintColor: "#fff",
-        headerTitleStyle: { fontWeight: "bold" },
+        headerStyle: {
+          backgroundColor: colors.background,
+          shadowColor: "transparent",
+          elevation: 0,
+        },
+        headerTintColor: colors.onBackground,
+        headerTitleStyle: { fontWeight: "700", fontSize: 18 },
+        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
@@ -67,9 +75,10 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="leaf" size={size} color={color} />
+            <Ionicons name="leaf-outline" size={size} color={color} />
           ),
           headerTitle: "Exotic Nursery",
+          headerTitleStyle: { fontWeight: "700", fontSize: 20, color: colors.primary },
         }}
       />
       <Tabs.Screen
@@ -77,7 +86,7 @@ export default function TabLayout() {
         options={{
           title: "Search",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="search" size={size} color={color} />
+            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />
@@ -95,7 +104,7 @@ export default function TabLayout() {
         options={{
           title: "Orders",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="receipt" size={size} color={color} />
+            <Ionicons name="receipt-outline" size={size} color={color} />
           ),
         }}
       />
@@ -104,7 +113,7 @@ export default function TabLayout() {
         options={{
           title: "Ask AI",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="chatbubble-ellipses" size={size} color={color} />
+            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
           ),
           headerTitle: "Plant Care Assistant",
         }}
@@ -114,7 +123,7 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />

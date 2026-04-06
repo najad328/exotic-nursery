@@ -18,6 +18,7 @@ import {
   clearChatHistory,
   SUGGESTED_QUESTIONS,
 } from "../../services/chat";
+import { colors, radius, shadows, spacing } from "../../theme";
 import type { ChatHistoryItem } from "../../services/chat";
 
 export default function ChatbotScreen() {
@@ -116,7 +117,7 @@ export default function ChatbotScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1B5E20" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -130,11 +131,14 @@ export default function ChatbotScreen() {
       {/* Header with clear button */}
       {messages.length > 0 && (
         <View style={styles.headerBar}>
-          <Text style={styles.headerText}>
-            🌿 Plant Care Assistant
-          </Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIconCircle}>
+              <Text style={styles.headerIcon}>&#127807;</Text>
+            </View>
+            <Text style={styles.headerText}>Plant Care Assistant</Text>
+          </View>
           <Pressable onPress={handleClear} style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>Clear Chat</Text>
+            <Text style={styles.clearButtonText}>Clear</Text>
           </Pressable>
         </View>
       )}
@@ -142,7 +146,9 @@ export default function ChatbotScreen() {
       {/* Messages */}
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🌱</Text>
+          <View style={styles.emptyIconCircle}>
+            <Text style={styles.emptyIcon}>&#127793;</Text>
+          </View>
           <Text style={styles.emptyTitle}>Plant Care Assistant</Text>
           <Text style={styles.emptySubtitle}>
             Ask me anything about plant care, growing tips, or diagnosing plant problems!
@@ -174,7 +180,7 @@ export default function ChatbotScreen() {
               ]}
             >
               {item.role === "assistant" && (
-                <Text style={styles.bubbleLabel}>🌿 Plant Assistant</Text>
+                <Text style={styles.bubbleLabel}>Plant Assistant</Text>
               )}
               <Text
                 style={[
@@ -192,7 +198,11 @@ export default function ChatbotScreen() {
             sending ? (
               <View style={[styles.bubble, styles.assistantBubble]}>
                 <View style={styles.typingIndicator}>
-                  <ActivityIndicator size="small" color="#1B5E20" />
+                  <View style={styles.typingDots}>
+                    <View style={[styles.typingDot, { opacity: 0.4 }]} />
+                    <View style={[styles.typingDot, { opacity: 0.6 }]} />
+                    <View style={[styles.typingDot, { opacity: 0.8 }]} />
+                  </View>
                   <Text style={styles.typingText}>Thinking...</Text>
                 </View>
               </View>
@@ -215,7 +225,7 @@ export default function ChatbotScreen() {
           value={input}
           onChangeText={setInput}
           placeholder="Ask about plant care..."
-          placeholderTextColor="#AAA"
+          placeholderTextColor={colors.textTertiary}
           multiline
           maxLength={500}
           editable={!sending}
@@ -231,9 +241,9 @@ export default function ChatbotScreen() {
           disabled={!input.trim() || sending}
         >
           {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={colors.white} />
           ) : (
-            <Text style={styles.sendIcon}>↑</Text>
+            <Text style={styles.sendIcon}>&#8593;</Text>
           )}
         </Pressable>
       </View>
@@ -242,125 +252,225 @@ export default function ChatbotScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+
+  // Header
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: colors.outlineVariant,
   },
-  headerText: { fontSize: 14, fontWeight: "600", color: "#1B5E20" },
-  clearButton: { paddingHorizontal: 10, paddingVertical: 4 },
-  clearButtonText: { fontSize: 13, color: "#999" },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  headerIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primaryContainer,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerIcon: {
+    fontSize: 14,
+  },
+  headerText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.onBackground,
+  },
+  clearButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  clearButtonText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.textSecondary,
+  },
+
+  // Empty state
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: spacing.xxl,
   },
-  emptyIcon: { fontSize: 56, marginBottom: 12 },
-  emptyTitle: { fontSize: 22, fontWeight: "bold", color: "#1B5E20" },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primaryContainer,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  emptyIcon: {
+    fontSize: 36,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.onBackground,
+    letterSpacing: -0.3,
+  },
   emptySubtitle: {
     fontSize: 14,
-    color: "#888",
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: 8,
+    marginTop: spacing.sm,
     lineHeight: 20,
     maxWidth: 300,
   },
+
+  // Suggested questions
   suggestions: {
-    marginTop: 24,
+    marginTop: spacing.xxl,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    gap: 8,
+    gap: spacing.sm,
     maxWidth: 360,
   },
   suggestionChip: {
-    backgroundColor: "#E8F5E9",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#C8E6C9",
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
-  suggestionText: { fontSize: 13, color: "#1B5E20" },
-  messageList: { padding: 16, paddingBottom: 8 },
+  suggestionText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.primary,
+  },
+
+  // Messages
+  messageList: {
+    padding: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
   bubble: {
     maxWidth: "85%",
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 10,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   userBubble: {
-    backgroundColor: "#1B5E20",
+    backgroundColor: colors.primary,
     alignSelf: "flex-end",
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: spacing.xs,
   },
   assistantBubble: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     alignSelf: "flex-start",
-    borderBottomLeftRadius: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderBottomLeftRadius: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
   bubbleLabel: {
     fontSize: 11,
-    color: "#1B5E20",
     fontWeight: "600",
-    marginBottom: 4,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: 0.3,
   },
-  bubbleText: { fontSize: 15, lineHeight: 22 },
-  userBubbleText: { color: "#fff" },
-  assistantBubbleText: { color: "#333" },
-  typingIndicator: { flexDirection: "row", alignItems: "center", gap: 8 },
-  typingText: { fontSize: 13, color: "#888" },
+  bubbleText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  userBubbleText: {
+    color: colors.white,
+  },
+  assistantBubbleText: {
+    color: colors.onSurface,
+  },
+
+  // Typing indicator
+  typingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  typingDots: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  typingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+  },
+  typingText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // Error
   errorBar: {
-    backgroundColor: "#FFEBEE",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#EF9A9A",
+    backgroundColor: colors.errorContainer,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
-  errorText: { color: "#C62828", fontSize: 12, textAlign: "center" },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    textAlign: "center",
+  },
+
+  // Input bar
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
-    padding: 12,
-    paddingBottom: Platform.OS === "ios" ? 28 : 12,
-    backgroundColor: "#fff",
+    padding: spacing.md,
+    paddingBottom: Platform.OS === "ios" ? 28 : spacing.md,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    gap: 8,
+    borderTopColor: colors.outlineVariant,
+    gap: spacing.sm,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 24,
-    paddingHorizontal: 16,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
     fontSize: 15,
     maxHeight: 100,
-    backgroundColor: "#FAFAFA",
-    color: "#333",
+    color: colors.onSurface,
   },
   sendButton: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "#1B5E20",
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
-  sendButtonDisabled: { opacity: 0.4 },
-  sendIcon: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  sendButtonDisabled: {
+    opacity: 0.4,
+  },
+  sendIcon: {
+    color: colors.white,
+    fontSize: 20,
+    fontWeight: "bold",
+  },
 });

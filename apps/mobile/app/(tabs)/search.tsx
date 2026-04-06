@@ -16,6 +16,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getPlants, getCategories } from "../../services/plants";
 import { formatPriceINR } from "@exotic-nursery/types";
+import { colors, radius, shadows, spacing } from "../../theme";
 import type { PlantFilters, CareLevel } from "@exotic-nursery/types";
 
 const CARE_LEVELS = ["easy", "medium", "hard", "expert"] as const;
@@ -85,10 +86,11 @@ export default function SearchScreen() {
       {/* Search Bar */}
       <View style={styles.searchRow}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#999" />
+          <Ionicons name="search" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search exotic plants..."
+            placeholderTextColor={colors.textTertiary}
             value={search}
             onChangeText={setSearch}
             autoCapitalize="none"
@@ -96,7 +98,7 @@ export default function SearchScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
@@ -107,7 +109,7 @@ export default function SearchScreen() {
           <Ionicons
             name="options"
             size={20}
-            color={activeFilterCount > 0 ? "#fff" : "#1B5E20"}
+            color={activeFilterCount > 0 ? colors.surface : colors.primary}
           />
           {activeFilterCount > 0 && (
             <View style={styles.filterBadge}>
@@ -156,7 +158,7 @@ export default function SearchScreen() {
               <Text style={styles.filterTagText}>
                 {categories?.find((c) => c.slug === selectedCategory)?.name ?? selectedCategory}
               </Text>
-              <Ionicons name="close" size={14} color="#1B5E20" />
+              <Ionicons name="close" size={14} color={colors.primary} />
             </Pressable>
           )}
           {selectedCareLevel !== "" && (
@@ -167,7 +169,7 @@ export default function SearchScreen() {
               <Text style={styles.filterTagText}>
                 {selectedCareLevel.charAt(0).toUpperCase() + selectedCareLevel.slice(1)}
               </Text>
-              <Ionicons name="close" size={14} color="#1B5E20" />
+              <Ionicons name="close" size={14} color={colors.primary} />
             </Pressable>
           )}
           {selectedPriceRange > 0 && (
@@ -176,7 +178,7 @@ export default function SearchScreen() {
               onPress={() => setSelectedPriceRange(0)}
             >
               <Text style={styles.filterTagText}>{priceRange.label}</Text>
-              <Ionicons name="close" size={14} color="#1B5E20" />
+              <Ionicons name="close" size={14} color={colors.primary} />
             </Pressable>
           )}
           <Pressable onPress={clearFilters}>
@@ -188,7 +190,7 @@ export default function SearchScreen() {
       {/* Results */}
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#1B5E20" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : error ? (
         <View style={styles.center}>
@@ -263,7 +265,7 @@ export default function SearchScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filters</Text>
               <Pressable onPress={() => setShowFilters(false)}>
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color={colors.onBackground} />
               </Pressable>
             </View>
 
@@ -365,110 +367,108 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
+  container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 60 },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
     gap: 10,
   },
   searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.surfaceContainer,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: colors.outlineVariant,
     height: 48,
   },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: "#333" },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: colors.onBackground },
   filterButton: {
     width: 48,
     height: 48,
-    borderRadius: 12,
-    backgroundColor: "#E8F5E9",
+    borderRadius: radius.md,
+    backgroundColor: colors.primaryContainer,
     justifyContent: "center",
     alignItems: "center",
   },
   filterButtonActive: {
-    backgroundColor: "#1B5E20",
+    backgroundColor: colors.primary,
   },
   filterBadge: {
     position: "absolute",
-    top: 4,
-    right: 4,
+    top: spacing.xs,
+    right: spacing.xs,
     width: 16,
     height: 16,
-    borderRadius: 8,
-    backgroundColor: "#FF5722",
+    borderRadius: spacing.sm,
+    backgroundColor: colors.badge,
     justifyContent: "center",
     alignItems: "center",
   },
-  filterBadgeText: { color: "#fff", fontSize: 10, fontWeight: "bold" },
+  filterBadgeText: { color: colors.surface, fontSize: 10, fontWeight: "bold" },
   chipList: { maxHeight: 48 },
-  chipContainer: { paddingHorizontal: 16, gap: 8 },
+  chipContainer: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: colors.outlineVariant,
   },
-  chipActive: { backgroundColor: "#1B5E20", borderColor: "#1B5E20" },
-  chipText: { fontSize: 13, color: "#555", fontWeight: "500" },
-  chipTextActive: { color: "#fff" },
+  chipActive: { backgroundColor: colors.primaryContainer, borderColor: colors.primary },
+  chipText: { fontSize: 13, color: colors.onSurfaceVariant, fontWeight: "500" },
+  chipTextActive: { color: colors.primary },
   activeFilters: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
     flexWrap: "wrap",
   },
   filterTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E8F5E9",
-    borderRadius: 16,
+    gap: spacing.xs,
+    backgroundColor: colors.primaryContainer,
+    borderRadius: radius.lg,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  filterTagText: { fontSize: 12, color: "#1B5E20", fontWeight: "600" },
-  clearAll: { fontSize: 12, color: "#D32F2F", fontWeight: "600" },
-  resultCount: { fontSize: 13, color: "#888", marginBottom: 8 },
-  grid: { padding: 16, paddingTop: 12 },
-  gridRow: { gap: 12 },
+  filterTagText: { fontSize: 12, color: colors.primary, fontWeight: "600" },
+  clearAll: { fontSize: 12, color: colors.error, fontWeight: "600" },
+  resultCount: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.sm },
+  grid: { padding: spacing.lg, paddingTop: spacing.md },
+  gridRow: { gap: spacing.md },
   card: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     overflow: "hidden",
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
-  cardImage: { width: "100%", height: 120, backgroundColor: "#E8F5E9" },
+  cardImage: { width: "100%", height: 120, backgroundColor: colors.primaryContainer },
   cardPlaceholder: { justifyContent: "center", alignItems: "center" },
   placeholderEmoji: { fontSize: 36 },
   cardBody: { padding: 10 },
-  cardName: { fontSize: 14, fontWeight: "bold", color: "#333" },
-  cardCategory: { fontSize: 11, color: "#888", marginTop: 2 },
-  cardPrice: { fontSize: 15, fontWeight: "bold", color: "#1B5E20", marginTop: 4 },
-  outOfStock: { fontSize: 11, color: "#D32F2F", fontWeight: "600", marginTop: 3 },
-  emptyIcon: { fontSize: 48, marginBottom: 8 },
-  emptyText: { fontSize: 18, fontWeight: "bold", color: "#555" },
-  emptySubtext: { fontSize: 14, color: "#888", marginTop: 4 },
-  errorText: { fontSize: 16, color: "#D32F2F" },
+  cardName: { fontSize: 14, fontWeight: "bold", color: colors.onBackground },
+  cardCategory: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
+  cardPrice: { fontSize: 15, fontWeight: "bold", color: colors.primary, marginTop: spacing.xs },
+  outOfStock: { fontSize: 11, color: colors.error, fontWeight: "600", marginTop: 3 },
+  emptyIcon: { fontSize: 48, marginBottom: spacing.sm },
+  emptyText: { fontSize: 18, fontWeight: "bold", color: colors.onSurfaceVariant },
+  emptySubtext: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs },
+  errorText: { fontSize: 16, color: colors.error },
 
   // Filter Modal
   modalOverlay: {
@@ -477,10 +477,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.xl,
     paddingBottom: 40,
     maxHeight: "70%",
   },
@@ -488,55 +488,55 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
-  modalTitle: { fontSize: 20, fontWeight: "bold", color: "#333" },
+  modalTitle: { fontSize: 20, fontWeight: "bold", color: colors.onBackground },
   filterSectionTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#555",
+    color: colors.onSurfaceVariant,
     marginBottom: 10,
-    marginTop: 16,
+    marginTop: spacing.lg,
   },
   filterChips: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.sm,
   },
   filterChip: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: "#F5F5F5",
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: colors.outlineVariant,
   },
   filterChipActive: {
-    backgroundColor: "#E8F5E9",
-    borderColor: "#1B5E20",
+    backgroundColor: colors.primaryContainer,
+    borderColor: colors.primary,
   },
-  filterChipText: { fontSize: 13, color: "#666", fontWeight: "500" },
-  filterChipTextActive: { color: "#1B5E20", fontWeight: "700" },
+  filterChipText: { fontSize: 13, color: colors.onSurfaceVariant, fontWeight: "500" },
+  filterChipTextActive: { color: colors.primary, fontWeight: "700" },
   modalActions: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
     marginTop: 28,
   },
   clearButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: colors.outlineVariant,
     alignItems: "center",
   },
-  clearButtonText: { fontSize: 15, fontWeight: "600", color: "#666" },
+  clearButtonText: { fontSize: 15, fontWeight: "600", color: colors.onSurfaceVariant },
   applyButton: {
     flex: 2,
     paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#1B5E20",
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
     alignItems: "center",
   },
-  applyButtonText: { fontSize: 15, fontWeight: "bold", color: "#fff" },
+  applyButtonText: { fontSize: 15, fontWeight: "bold", color: colors.surface },
 });
