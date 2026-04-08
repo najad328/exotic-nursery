@@ -128,16 +128,20 @@
 
 ### Architecture Decisions
 - **Pluggable LLM interface**: `LLMProvider` interface with `sendMessage()`. Swap providers by changing one import.
-- **Gemini Flash (free tier)**: 15 RPM, 1M tokens/day, 1500 req/day. Called directly from client — no Edge Function needed.
-- **System prompt**: Plant care expert persona. Redirects non-plant questions. Uses emojis.
-- **Context window**: Last 10 messages sent for conversational continuity
+- **Groq (Llama 3.3 70B)**: 30 RPM, 14,400 req/day free. Switched from Gemini — free tier unavailable in India (quota limit: 0).
+- **Gemini provider retained**: `GeminiProvider` still available as a swappable alternative for regions where it works.
+- **Branded as "Aloe AI"**: Custom AloeIcon (leaf + sparkle), "Aloe there!" greeting, plant-pun personality.
+- **System prompt**: Plant care expert persona with warm, punny style. Redirects non-plant questions.
+- **Context window**: Last 20 messages (increased from 10) for better follow-up understanding
+- **Stale closure fix**: Uses `useRef` to pass latest message history to LLM, avoiding React async state issues
 - **6 suggested starter questions**: Quick interaction without typing
-- **No Edge Function**: Calling Gemini from client avoids Supabase function deployment complexity and stays $0
+- **No Edge Function**: Calling Groq from client avoids Supabase function deployment complexity and stays $0
+- **Error handling**: Retry logic (2 retries with backoff) for 429 rate limits, user-friendly error messages
 
 ### Dependencies Added
 | Package | Purpose | Workspace |
 |---|---|---|
-| (none — uses native fetch) | Gemini API calls | mobile |
+| (none — uses native fetch) | Groq/Gemini API calls | mobile |
 
 ---
 
@@ -152,7 +156,7 @@
 | `v_monthly_revenue` | Monthly revenue + avg order value |
 
 ### Architecture Decisions
-- **Recharts for visualizations**: Bar chart (daily orders), line chart (revenue), horizontal bar (top plants), pie chart (status breakdown)
+- **TradingView Lightweight Charts**: Replaced Recharts. Histogram (daily orders), line chart (revenue), horizontal bar (top plants), conic-gradient donut (status breakdown)
 - **Server-side aggregation**: Data aggregated in Next.js server component, passed to client chart components
 - **5 KPI cards**: Total revenue, total orders, avg order value, customers, active plants
 - **Graceful empty state**: Shows placeholder when no orders exist
@@ -160,7 +164,7 @@
 ### Dependencies Added
 | Package | Purpose | Workspace |
 |---|---|---|
-| recharts | Chart library | admin |
+| lightweight-charts | TradingView chart library (replaced Recharts) | admin |
 
 ---
 
@@ -173,6 +177,52 @@
 - **Loading skeletons**: Tailwind `animate-pulse` for dashboard, plants list, orders list
 - **Env validation utility**: `validateEnv()` function for startup checks
 - **Updated .env.example**: Documents all required variables for both apps
+
+---
+
+## 2026-03-28 — Phase 9: Delivery Pincodes + Courier Tracking
+
+### Database Schema
+| Table | Key Design |
+|---|---|
+| `delivery_pincodes` | Serviceable pincodes with area name, city, state, delivery days. RLS: anyone reads active, admins manage. |
+| `shipment_events` | Courier tracking timeline. `order_id` FK, event_time, status, location, description. RLS: users see own order events. |
+| Orders table additions | `awb_code`, `courier_name`, `courier_tracking_url`, `estimated_delivery_at`, `shipped_at` columns. |
+
+### Architecture Decisions
+- **Pincode check at checkout**: Customer enters pincode → REST query → shows availability + estimated delivery days
+- **Admin pincode management**: Full CRUD for delivery pincodes
+- **Shiprocket integration (mock mode)**: `packages/utils/src/shiprocket.ts` with mock courier assignment, AWB generation, and tracking events
+- **Ship with Courier button**: Available for pending, confirmed, and processing orders
+- **Realtime shipment events**: Mobile order detail subscribes to `shipment_events` inserts for live tracking
+
+---
+
+## 2026-04-06 — Phase 10: Design System + Mobile Restyling
+
+### Architecture Decisions
+- **Centralized theme**: `apps/mobile/theme.ts` — Material You inspired "Verdant Archive" design system with colors, spacing, radius, shadows, typography tokens
+- **12 screens restyled**: All mobile screens updated from hardcoded colors to theme tokens (login, register, home, search, cart, orders, chatbot, profile, plant detail, checkout, order detail, tab layout)
+- **Stitch design reference**: Used Google Stitch MCP to generate 11 reference screens, then manually applied the design language to React Native
+- **Aloe AI branding**: Custom `AloeIcon` component (Ionicons leaf + sparkles), `AloeAvatar` for empty state, `AloeBadge` for chat bubbles
+- **Tab differentiation**: Home uses `home-outline`, Aloe AI uses `leaf-outline`
+
+---
+
+## 2026-04-08 — Phase 11: AI Business Agent (Admin)
+
+### Architecture Decisions
+- **Server-side API route**: `/api/ai-summary` fetches live data from Supabase (orders, items, inventory, customers, status breakdown) and sends structured business context to Groq
+- **Groq API key server-only**: `GROQ_API_KEY` (not `NEXT_PUBLIC_`) — never exposed to browser
+- **Auto-generated daily summary**: Orders today, revenue, weekly/monthly comparison, top plants, low stock alerts, actionable recommendations
+- **Interactive chat agent**: Admin can ask business questions with full conversation context (revenue analysis, inventory, city-wise orders, forecasting)
+- **Markdown rendering**: Custom lightweight renderer for bold, bullets, headings, numbered lists, inline code — no external dependency
+- **Suggested quick questions**: 6 common business queries as clickable chips
+- **Business data snapshot**: Structured context includes today's orders, 7-day/30-day trends, active orders, top sellers, low stock alerts, customer count
+
+### CI Fixes
+- **`next lint` → no-op**: Next.js 15+ `next lint` prompts interactively for ESLint config, breaking CI. Replaced with skip since `typecheck` covers correctness.
+- **GitHub Actions v4 → v5**: Updated `actions/checkout` and `actions/setup-node` to v5 to fix Node.js 20 deprecation warning.
 
 ---
 
@@ -192,7 +242,7 @@
 | tailwindcss (4.1) | admin | Styling |
 | zod | packages/utils | Schema validation |
 | papaparse | admin | CSV parsing |
-| recharts | admin | Chart visualizations |
+| lightweight-charts | admin | TradingView chart visualizations |
 | react-native-screens | mobile | Navigation |
 | react-native-gesture-handler | mobile | Touch gestures |
 | react-native-reanimated | mobile | Animations |

@@ -9,12 +9,13 @@ A full-stack mobile app for an exotic plants nursery — customers browse and or
 | Mobile App | React Native + Expo SDK 55 (Expo Router) |
 | Admin Dashboard | Next.js 15 App Router (React 19) |
 | Backend & DB | Supabase (Postgres, Auth, Storage, Realtime) |
-| AI Chatbot | Google Gemini 2.0 Flash (pluggable LLM interface) |
+| AI Chatbot (Mobile) | Groq (Llama 3.3 70B) — pluggable LLM interface |
+| AI Business Agent (Admin) | Groq (Llama 3.3 70B) — server-side analytics |
 | Monorepo | Turborepo + pnpm workspaces |
 | Language | TypeScript 5+ (strict mode, no `any`) |
 | Validation | Zod schemas for all data |
 | State | Zustand (client) + TanStack Query (server) |
-| Charts | Recharts (admin analytics) |
+| Charts | TradingView Lightweight Charts (admin analytics) |
 | Styling | Tailwind CSS v4 (admin), React Native StyleSheet (mobile) |
 
 ## Project Structure
@@ -29,21 +30,23 @@ exotic-nursery/
 │   │   │   ├── plant/[slug]     # Plant detail
 │   │   │   ├── order/[id]       # Order detail + realtime tracking
 │   │   │   └── checkout         # Checkout with delivery form
-│   │   ├── components/          # WhatsAppButton, ErrorBoundary
-│   │   ├── services/            # Supabase queries, LLM providers
-│   │   └── stores/              # Zustand (auth, cart)
+│   │   ├── components/          # WhatsAppButton, ErrorBoundary, AloeIcon
+│   │   ├── services/            # Supabase queries, LLM providers (Groq, Gemini)
+│   │   ├── stores/              # Zustand (auth, cart)
+│   │   └── theme.ts             # Centralized design tokens (Verdant Archive)
 │   └── admin/                   # Admin dashboard (Next.js)
 │       └── src/app/(dashboard)/ # Protected admin routes
 │           ├── plants/          # CRUD, bulk upload
 │           ├── orders/          # Order management + status updates
-│           ├── analytics/       # KPIs + Recharts visualizations
+│           ├── analytics/       # KPIs + TradingView Lightweight Charts
+│           ├── business-ai/     # AI business summary + chat agent
 │           └── whatsapp/        # Message template management
 ├── packages/
 │   ├── types/                   # Shared TypeScript interfaces (40+ types)
 │   ├── utils/                   # Zod validation, WhatsApp utils, env helpers
 │   └── supabase/                # Typed Supabase client + DB types
 ├── supabase/
-│   └── migrations/              # 8 SQL migration files
+│   └── migrations/              # 10 SQL migration files
 ├── TEST_PLAN.md
 ├── TECH_LOG.md
 └── .env.example
@@ -61,7 +64,11 @@ exotic-nursery/
 - 📦 Order history with status badges
 - 📡 Real-time order tracking via Supabase Realtime
 - 💬 WhatsApp deep-link buttons (order inquiries, plant questions)
-- 🤖 AI plant care chatbot (Google Gemini Flash)
+- 🤖 **Aloe AI** — plant care chatbot (Groq/Llama 3.3 70B, "Aloe there!" personality)
+- 🎨 Verdant Archive design system — Material You inspired theme across all screens
+- 📷 Multi-image carousel with navigation arrows
+- 🔗 Share bar (WhatsApp, Facebook, Copy Link, native share)
+- 🚚 Courier tracking with Shiprocket integration (mock mode)
 - ⚠️ Error boundary — no white-screen crashes
 
 ### Admin Dashboard (Web — `localhost:3000`)
@@ -70,8 +77,11 @@ exotic-nursery/
 - 🌿 Plant CRUD — create, edit, deactivate with image upload
 - 📤 Bulk upload — CSV/JSON with validation preview
 - 📦 Order management — view all orders, update status (forward-only)
-- 📈 Analytics — daily orders, revenue trends, top plants, status pie chart
+- 📈 Analytics — daily orders, revenue trends, top plants (TradingView Lightweight Charts)
+- ✨ **Business AI** — AI-powered daily summary + interactive chat agent (Groq/Llama 3.3)
+- 🚚 Courier shipping — Ship with Courier button (Shiprocket mock integration)
 - 💬 WhatsApp templates — browse, fill variables, copy, send
+- 📍 Delivery pincode management
 - 💀 Loading skeletons and error boundaries
 - 🚫 404 page
 
@@ -87,8 +97,10 @@ exotic-nursery/
 | `order_items` | Snapshot of items at time of order |
 | `whatsapp_templates` | Message templates (7 seeded) |
 | `chat_history` | AI chatbot conversation history |
+| `delivery_pincodes` | Serviceable delivery areas with estimated days |
+| `shipment_events` | Courier tracking timeline events |
 
-**Key patterns:** RLS on every table, prices in paise (integer), atomic `place_order()` function with `SELECT ... FOR UPDATE`, Realtime on orders.
+**Key patterns:** RLS on every table, prices in paise (integer), atomic `place_order()` function with `SELECT ... FOR UPDATE`, Realtime on orders and shipment events.
 
 ## Getting Started
 
@@ -97,7 +109,7 @@ exotic-nursery/
 - Node.js 22+
 - pnpm 10+
 - A Supabase project (free tier)
-- A Google Gemini API key (free at https://aistudio.google.com/apikey)
+- A Groq API key (free at https://console.groq.com/keys)
 
 ### Setup
 
@@ -141,7 +153,9 @@ pnpm turbo test         # Run all tests
 |---|---|
 | Prices in paise (integer) | Avoids floating-point math errors in currency |
 | Atomic `place_order()` Postgres function | Prevents overselling with `SELECT ... FOR UPDATE` |
-| Pluggable LLM interface | Swap AI providers by changing one import |
+| Pluggable LLM interface | Swap AI providers by changing one import (Groq default, Gemini available) |
+| Centralized design tokens | `theme.ts` with Material You-inspired colors, spacing, radius, shadows |
+| Server-side AI in admin | Groq API key stays on server (not exposed to browser) |
 | Zustand + TanStack Query split | Client state (auth, cart) vs server cache (catalog, orders) |
 | `(dashboard)` route group in admin | Single auth guard layout for all protected routes |
 | WhatsApp deep links (not API) | $0 cost, works on both mobile and web |
@@ -153,7 +167,7 @@ pnpm turbo test         # Run all tests
 | Mobile App | Expo EAS (builds + OTA updates) | Free (30 builds/month) |
 | Admin Dashboard | Vercel | Free (hobby plan) |
 | Database + Auth | Supabase | Free (500MB DB, 50K MAU) |
-| AI Chatbot | Google Gemini Flash | Free (15 RPM, 1M tokens/day) |
+| AI (Mobile + Admin) | Groq (Llama 3.3 70B) | Free (30 RPM, 14,400 req/day) |
 
 ## License
 
