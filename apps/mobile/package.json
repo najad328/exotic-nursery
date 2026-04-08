@@ -12,7 +12,7 @@
     "build": "echo \"Mobile builds via EAS\" && exit 0",
     "lint": "echo \"No lint config yet\" && exit 0",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "vitest run",
     "clean": "rm -rf .expo .turbo node_modules"
   },
   "dependencies": {
