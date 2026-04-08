@@ -14,6 +14,7 @@ const navItems: NavItem[] = [
   { label: "Plants", href: "/plants", icon: "🌿" },
   { label: "Orders", href: "/orders", icon: "📦" },
   { label: "Analytics", href: "/analytics", icon: "📈" },
+  { label: "Business AI", href: "/business-ai", icon: "✨" },
   { label: "Pincodes", href: "/pincodes", icon: "📍" },
   { label: "WhatsApp", href: "/whatsapp", icon: "💬" },
 ];
