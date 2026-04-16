@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice, buildOrderStatusWhatsAppUrl, interpolateTemplate, ShiprocketService } from "@exotic-nursery/utils";
+import { buildOrderNotification } from "@exotic-nursery/types";
 import { createSupabaseBrowserClient } from "../../../../lib/supabase-browser";
 
 const STATUS_FLOW = [
@@ -280,12 +281,63 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
       setNewStatus("shipped");
       setShowShipModal(false);
       setMessage(`✅ Shipped via ${result.courier_name}! AWB: ${result.awb_code}`);
+
+      // Send push notification to customer
+      sendOrderPushNotification("shipped", {
+        courierName: result.courier_name,
+        awbCode: result.awb_code,
+      });
+
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to ship";
       setMessage(`Error: ${msg}`);
     } finally {
       setShipping(false);
+    }
+  }
+
+  // Send push notification for order status change
+  async function sendOrderPushNotification(
+    status: string,
+    extra?: { courierName?: string; awbCode?: string }
+  ) {
+    try {
+      // Get user_id from the order (need to query it)
+      const supabase = createSupabaseBrowserClient();
+      const { data: orderData } = await supabase
+        .from("orders")
+        .select("user_id")
+        .eq("id", order.id)
+        .single();
+
+      if (!orderData?.user_id) return;
+
+      const notif = buildOrderNotification(
+        status as Parameters<typeof buildOrderNotification>[0],
+        order.id,
+        {
+          total: formatPrice(order.total_paise),
+          courierName: extra?.courierName,
+          awbCode: extra?.awbCode,
+        }
+      );
+
+      await fetch("/api/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "order_status",
+          title: notif.title,
+          body: notif.body,
+          userId: orderData.user_id,
+          orderId: order.id,
+          channelId: "orders",
+          data: { type: "order_status", orderId: order.id, status },
+        }),
+      });
+    } catch (err) {
+      console.error("[Push] Failed to send order notification:", err);
     }
   }
 
@@ -314,6 +366,10 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
 
       setOrder((prev) => ({ ...prev, status: newStatus }));
       setMessage("Status updated successfully!");
+
+      // Send push notification to customer
+      sendOrderPushNotification(newStatus);
+
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to update status";
@@ -340,6 +396,10 @@ export function OrderDetailClient({ order: initialOrder }: { order: OrderData })
       setOrder((prev) => ({ ...prev, status: "cancelled" }));
       setNewStatus("cancelled");
       setMessage("Order cancelled.");
+
+      // Send push notification to customer
+      sendOrderPushNotification("cancelled");
+
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to cancel";

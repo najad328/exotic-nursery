@@ -208,5 +208,118 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
   "delivered",
 ];
 
-// Phase 5: WhatsApp template types will go here
-// Phase 6: Chat types will go here
+// ---- Push Notifications ----
+
+export type NotificationType =
+  | "order_status"
+  | "new_arrival"
+  | "price_drop"
+  | "promotion"
+  | "custom";
+
+export interface PushToken extends BaseEntity {
+  user_id: string;
+  token: string;
+  device_name: string | null;
+  platform: "ios" | "android" | "web" | "unknown";
+  is_active: boolean;
+}
+
+export interface NotificationPayload {
+  to: string | string[];
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  sound?: "default" | null;
+  badge?: number;
+  channelId?: string;
+}
+
+export interface NotificationLogEntry {
+  id: string;
+  user_id: string | null;
+  order_id: string | null;
+  plant_id: string | null;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  sent_at: string;
+  is_broadcast: boolean;
+  status: "sent" | "failed";
+  recipient_count: number;
+}
+
+/** Build a notification title + body for an order status change */
+export function buildOrderNotification(
+  status: OrderStatus,
+  orderId: string,
+  extra?: { total?: string; courierName?: string; awbCode?: string }
+): { title: string; body: string } {
+  const shortId = orderId.slice(0, 8).toUpperCase();
+
+  const map: Record<OrderStatus, { title: string; body: string }> = {
+    pending: {
+      title: "Order Placed! 🌿",
+      body: `Your order #${shortId} has been placed.${extra?.total ? ` Total: ${extra.total}.` : ""} Thank you!`,
+    },
+    confirmed: {
+      title: "Order Confirmed ✅",
+      body: `Great news! Your order #${shortId} has been confirmed and is being prepared.`,
+    },
+    processing: {
+      title: "Being Prepared 🌱",
+      body: `Your order #${shortId} is being carefully prepared with love.`,
+    },
+    shipped: {
+      title: "Order Shipped! 📦",
+      body: `Your order #${shortId} has been shipped${extra?.courierName ? ` via ${extra.courierName}` : ""}.${extra?.awbCode ? ` Tracking: ${extra.awbCode}` : ""}`,
+    },
+    out_for_delivery: {
+      title: "Out for Delivery! 🚚",
+      body: `Your order #${shortId} is out for delivery! Keep your phone handy.`,
+    },
+    delivered: {
+      title: "Order Delivered! 🎉",
+      body: `Your plants have arrived! Enjoy your order #${shortId}.`,
+    },
+    cancelled: {
+      title: "Order Cancelled",
+      body: `Your order #${shortId} has been cancelled. Contact us if you have questions.`,
+    },
+  };
+
+  return map[status];
+}
+
+/** Build a notification for a new plant arrival */
+export function buildNewArrivalNotification(
+  plantName: string,
+  price: string
+): { title: string; body: string } {
+  return {
+    title: "New Arrival! 🌿",
+    body: `${plantName} just dropped! Starting at ${price}.`,
+  };
+}
+
+/** Build a notification for a price drop */
+export function buildPriceDropNotification(
+  plantName: string,
+  oldPrice: string,
+  newPrice: string,
+  discountPercent: number
+): { title: string; body: string } {
+  return {
+    title: "Price Drop! 💰",
+    body: `${plantName} is now ${newPrice} (was ${oldPrice}) — Save ${discountPercent}%!`,
+  };
+}
+
+/** Build Aloe AI promo notification (sent after first order delivered) */
+export function buildAloeAIPromoNotification(): { title: string; body: string } {
+  return {
+    title: "Your plants just arrived! 🌱",
+    body: `Ask Aloe AI how to care for them — just say "Aloe there!"`,
+  };
+}
