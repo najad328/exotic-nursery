@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../stores/authStore";
 import { signOut } from "../../services/auth";
 import { supabase } from "../../services/supabase";
+import { deactivatePushTokens } from "../../services/notifications";
 import { colors, radius, shadows, spacing } from "../../theme";
 
 export default function ProfileScreen() {
@@ -36,6 +37,7 @@ export default function ProfileScreen() {
     if (Platform.OS === "web") {
       if (window.confirm("Are you sure you want to sign out?")) {
         try {
+          if (user?.id) await deactivatePushTokens(user.id);
           await signOut();
           reset();
           router.replace("/(auth)/login");
@@ -53,6 +55,7 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           try {
+            if (user?.id) await deactivatePushTokens(user.id);
             await signOut();
             reset();
             router.replace("/(auth)/login");

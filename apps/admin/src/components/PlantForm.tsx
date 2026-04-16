@@ -3,6 +3,10 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createPlantSchema, generateSlug, toPaise, formatPrice } from "@exotic-nursery/utils";
+import {
+  buildNewArrivalNotification,
+  buildPriceDropNotification,
+} from "@exotic-nursery/types";
 import { createSupabaseBrowserClient } from "../lib/supabase-browser";
 
 interface CategoryOption {
@@ -239,15 +243,75 @@ export function PlantForm({
       };
 
       if (isEditing && plant?.id) {
+        // Check for price drop before updating
+        const oldPrice = plant.price_paise;
+        const newPrice = payload.price_paise;
+        const priceDropped = newPrice < oldPrice && payload.is_active;
+
         const { error } = await supabase
           .from("plants")
           .update(payload)
           .eq("id", plant.id);
         if (error) throw error;
+
+        // Send price drop notification if price decreased
+        if (priceDropped) {
+          const discountPercent = Math.round(
+            ((oldPrice - newPrice) / oldPrice) * 100
+          );
+          const notif = buildPriceDropNotification(
+            payload.name,
+            formatPrice(oldPrice),
+            formatPrice(newPrice),
+            discountPercent
+          );
+
+          fetch("/api/send-notification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "price_drop",
+              title: notif.title,
+              body: notif.body,
+              broadcast: true,
+              plantId: plant.id,
+              channelId: "promotions",
+              data: { type: "price_drop", plantSlug: payload.slug },
+            }),
+          }).catch(console.error);
+        }
+
         setSuccessMessage("Plant updated successfully!");
       } else {
-        const { error } = await supabase.from("plants").insert(payload);
+        const { data: insertedPlant, error } = await supabase
+          .from("plants")
+          .insert(payload)
+          .select("id, slug")
+          .single();
         if (error) throw error;
+
+        // Send new arrival notification for active plants
+        if (payload.is_active) {
+          const notif = buildNewArrivalNotification(
+            payload.name,
+            formatPrice(payload.price_paise)
+          );
+
+          fetch("/api/send-notification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "new_arrival",
+              title: notif.title,
+              body: notif.body,
+              broadcast: true,
+              plantId: insertedPlant?.id,
+              channelId: "promotions",
+              data: { type: "new_arrival", plantSlug: insertedPlant?.slug ?? payload.slug },
+            }),
+          }).catch(console.error);
+        }
+
         setSuccessMessage("Plant created successfully!");
         router.push("/plants");
       }

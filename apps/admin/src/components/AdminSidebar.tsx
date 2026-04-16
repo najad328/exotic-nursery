@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
   { label: "Analytics", href: "/analytics", icon: "📈" },
   { label: "Business AI", href: "/business-ai", icon: "✨" },
   { label: "Pincodes", href: "/pincodes", icon: "📍" },
+  { label: "Notifications", href: "/notifications", icon: "🔔" },
   { label: "WhatsApp", href: "/whatsapp", icon: "💬" },
 ];
 
