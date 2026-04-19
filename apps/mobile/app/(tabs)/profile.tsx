@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../stores/authStore";
 import { signOut } from "../../services/auth";
 import { supabase } from "../../services/supabase";
+import { deactivatePushTokens } from "../../services/notifications";
+import { colors, radius, shadows, spacing } from "../../theme";
 
 export default function ProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
@@ -35,6 +37,7 @@ export default function ProfileScreen() {
     if (Platform.OS === "web") {
       if (window.confirm("Are you sure you want to sign out?")) {
         try {
+          if (user?.id) await deactivatePushTokens(user.id);
           await signOut();
           reset();
           router.replace("/(auth)/login");
@@ -52,6 +55,7 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           try {
+            if (user?.id) await deactivatePushTokens(user.id);
             await signOut();
             reset();
             router.replace("/(auth)/login");
@@ -163,7 +167,7 @@ export default function ProfileScreen() {
 
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={22} color="#D32F2F" />
+          <Ionicons name="log-out-outline" size={22} color={colors.error} />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -180,7 +184,7 @@ export default function ProfileScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Profile</Text>
               <Pressable onPress={() => setEditModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#666" />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -190,6 +194,7 @@ export default function ProfileScreen() {
               value={editName}
               onChangeText={setEditName}
               placeholder="Your full name"
+              placeholderTextColor={colors.textTertiary}
               autoCapitalize="words"
             />
 
@@ -199,6 +204,7 @@ export default function ProfileScreen() {
               value={editPhone}
               onChangeText={setEditPhone}
               placeholder="+91 9876543210"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="phone-pad"
             />
 
@@ -214,7 +220,7 @@ export default function ProfileScreen() {
               disabled={saving}
             >
               {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <Text style={styles.saveButtonText}>Save Changes</Text>
               )}
@@ -235,7 +241,7 @@ export default function ProfileScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Help & Support</Text>
               <Pressable onPress={() => setHelpModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#666" />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -244,42 +250,42 @@ export default function ProfileScreen() {
             </Text>
 
             <TouchableOpacity style={styles.contactItem} onPress={handleEmailPress}>
-              <View style={[styles.contactIcon, { backgroundColor: "#E3F2FD" }]}>
-                <Ionicons name="mail" size={22} color="#1565C0" />
+              <View style={[styles.contactIcon, { backgroundColor: colors.primaryContainer }]}>
+                <Ionicons name="mail-outline" size={22} color={colors.primary} />
               </View>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>Email Us</Text>
                 <Text style={styles.contactValue}>support@exoticnursery.in</Text>
               </View>
-              <Ionicons name="open-outline" size={18} color="#999" />
+              <Ionicons name="open-outline" size={18} color={colors.outline} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.contactItem} onPress={handlePhonePress}>
-              <View style={[styles.contactIcon, { backgroundColor: "#E8F5E9" }]}>
-                <Ionicons name="call" size={22} color="#2E7D32" />
+              <View style={[styles.contactIcon, { backgroundColor: colors.tertiaryContainer }]}>
+                <Ionicons name="call-outline" size={22} color={colors.tertiary} />
               </View>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>Call Us</Text>
                 <Text style={styles.contactValue}>+91 98765 43210</Text>
               </View>
-              <Ionicons name="open-outline" size={18} color="#999" />
+              <Ionicons name="open-outline" size={18} color={colors.outline} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.contactItem} onPress={handleWhatsAppPress}>
-              <View style={[styles.contactIcon, { backgroundColor: "#E8F5E9" }]}>
-                <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+              <View style={[styles.contactIcon, { backgroundColor: colors.successContainer }]}>
+                <Ionicons name="logo-whatsapp" size={22} color={colors.whatsapp} />
               </View>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>WhatsApp</Text>
                 <Text style={styles.contactValue}>+91 98765 43210</Text>
               </View>
-              <Ionicons name="open-outline" size={18} color="#999" />
+              <Ionicons name="open-outline" size={18} color={colors.outline} />
             </TouchableOpacity>
 
             <View style={styles.helpHours}>
-              <Ionicons name="time-outline" size={16} color="#888" />
+              <Ionicons name="time-outline" size={16} color={colors.textTertiary} />
               <Text style={styles.helpHoursText}>
-                Available Mon–Sat, 9 AM – 6 PM IST
+                Available Mon-Sat, 9 AM - 6 PM IST
               </Text>
             </View>
           </View>
@@ -301,10 +307,10 @@ function MenuItem({
   return (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <View style={styles.menuLeft}>
-        <Ionicons name={icon} size={22} color="#555" />
+        <Ionicons name={icon} size={22} color={colors.onSurfaceVariant} />
         <Text style={styles.menuLabel}>{label}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#CCC" />
+      <Ionicons name="chevron-forward" size={20} color={colors.outline} />
     </TouchableOpacity>
   );
 }
@@ -312,176 +318,177 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
   },
   avatarContainer: {
     alignItems: "center",
-    paddingVertical: 32,
-    backgroundColor: "#fff",
+    paddingVertical: spacing.xxxl,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
+    borderBottomColor: colors.outlineVariant,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#1B5E20",
+    backgroundColor: colors.primaryContainer,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   avatarText: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#fff",
+    color: colors.primary,
   },
   name: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: colors.onBackground,
   },
   email: {
     fontSize: 14,
-    color: "#888",
-    marginTop: 4,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   phone: {
     fontSize: 14,
-    color: "#888",
+    color: colors.textSecondary,
     marginTop: 2,
   },
   menu: {
-    backgroundColor: "#fff",
-    marginTop: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#EEE",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    gap: spacing.sm,
   },
   menuItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+    ...shadows.sm,
   },
   menuLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: spacing.lg,
   },
   menuLabel: {
     fontSize: 16,
-    color: "#333",
+    color: colors.onSurface,
   },
   signOutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    marginTop: 24,
-    marginBottom: 32,
+    gap: spacing.sm,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.xxxl,
     paddingVertical: 14,
-    marginHorizontal: 16,
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#FFCDD2",
+    borderColor: colors.error,
   },
   signOutText: {
     fontSize: 16,
-    color: "#D32F2F",
+    color: colors.error,
     fontWeight: "600",
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.xxl,
     maxHeight: "80%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: colors.onBackground,
   },
   fieldLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#555",
-    marginBottom: 6,
-    marginTop: 12,
+    color: colors.onSurfaceVariant,
+    marginBottom: spacing.xs + 2,
+    marginTop: spacing.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
+    borderColor: colors.outlineVariant,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     fontSize: 16,
-    color: "#333",
-    backgroundColor: "#FAFAFA",
+    color: colors.onSurface,
+    backgroundColor: colors.surfaceContainer,
   },
   inputDisabled: {
-    backgroundColor: "#F0F0F0",
+    backgroundColor: colors.surfaceContainerHigh,
     justifyContent: "center",
   },
   disabledText: {
     fontSize: 16,
-    color: "#999",
+    color: colors.textTertiary,
   },
   helperText: {
     fontSize: 12,
-    color: "#999",
-    marginTop: 4,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
   },
   saveButton: {
-    backgroundColor: "#1B5E20",
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
     paddingVertical: 14,
     alignItems: "center",
-    marginTop: 24,
+    marginTop: spacing.xxl,
   },
   saveButtonDisabled: {
     opacity: 0.6,
   },
   saveButtonText: {
-    color: "#fff",
+    color: colors.white,
     fontSize: 16,
     fontWeight: "bold",
   },
   // Help & Support styles
   helpSubtitle: {
     fontSize: 15,
-    color: "#666",
+    color: colors.textSecondary,
     lineHeight: 22,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   contactItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: colors.outlineVariant,
     gap: 14,
   },
   contactIcon: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: radius.md,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -491,22 +498,22 @@ const styles = StyleSheet.create({
   contactLabel: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#333",
+    color: colors.onSurface,
   },
   contactValue: {
     fontSize: 13,
-    color: "#888",
+    color: colors.textSecondary,
     marginTop: 2,
   },
   helpHours: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 20,
+    gap: spacing.xs + 2,
+    marginTop: spacing.xl,
     justifyContent: "center",
   },
   helpHoursText: {
     fontSize: 13,
-    color: "#888",
+    color: colors.textTertiary,
   },
 });
