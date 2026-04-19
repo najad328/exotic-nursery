@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,12 +10,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: "📊" },
-  { label: "Plants", href: "/plants", icon: "🌿" },
-  { label: "Orders", href: "/orders", icon: "📦" },
-  { label: "Analytics", href: "/analytics", icon: "📈" },
-  { label: "Pincodes", href: "/pincodes", icon: "📍" },
-  { label: "WhatsApp", href: "/whatsapp", icon: "💬" },
+  { label: "Dashboard", href: "/", icon: "≡ƒôè" },
+  { label: "Plants", href: "/plants", icon: "≡ƒî┐" },
+  { label: "Orders", href: "/orders", icon: "≡ƒôª" },
+  { label: "Analytics", href: "/analytics", icon: "≡ƒôê" },
+  { label: "Business AI", href: "/business-ai", icon: "Γ£¿" },
+  { label: "Pincodes", href: "/pincodes", icon: "≡ƒôì" },
+  { label: "Notifications", href: "/notifications", icon: "≡ƒöö" },
+  { label: "WhatsApp", href: "/whatsapp", icon: "≡ƒÆ¼" },
 ];
 
 export function AdminSidebar() {
@@ -24,7 +26,7 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 bg-green-900 text-white min-h-screen flex flex-col">
       <div className="p-6 border-b border-green-800">
-        <h1 className="text-xl font-bold">🌿 Exotic Nursery</h1>
+        <h1 className="text-xl font-bold">≡ƒî┐ Exotic Nursery</h1>
         <p className="text-green-300 text-xs mt-1">Admin Dashboard</p>
       </div>
 
@@ -58,7 +60,7 @@ export function AdminSidebar() {
             type="submit"
             className="w-full text-left text-green-300 hover:text-white text-sm px-2 py-2 rounded hover:bg-green-800/50 transition-colors"
           >
-            ← Sign Out
+            ΓåÉ Sign Out
           </button>
         </form>
       </div>
